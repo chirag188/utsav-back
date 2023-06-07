@@ -1,23 +1,17 @@
-// import bcrypt from 'bcrypt'
-// import { v4 as uuid } from 'uuid'
+import { v4 as uuid } from 'uuid'
 import { Logger } from '@config/logger'
-import { SamparkVrundInterface, UserInterface, satsangProfileInterface } from '@interfaces/user'
-// import { caxtonLoginInterface, caxtonOnboardInterface } from '@interfaces/caxton'
+import {
+	KarykarmInterface,
+	SamparkVrundInterface,
+	UserInterface,
+	satsangProfileInterface,
+} from '@interfaces/user'
 import User from '@user/user.model'
 import SatsangProfile from '@user/SatsangProfile.model'
 import SamparkVrund from '@user/SamparkVrund.model'
-import { Op, Sequelize } from 'sequelize'
-// import BankDetails from './bankDetails.model'
-// import { Op, where } from 'sequelize'
-// import crypto from 'crypto'
-// import Config from '@config/config'
-// import axios from 'axios'
-// import Device from '@user/device.model'
-// import { sumsubHelper } from '@helpers/sumsub'
-// import Countries from '@user/countries.model'
-// import { hash } from 'bcrypt'
-// import { createSignUrl, downloadDoc } from '@helpers/helloSign'
-// import { encryptCaxtonPassword, randomStringGen } from '@helpers/encryptionHelper'
+import { Op } from 'sequelize'
+import Karykarm from './karykarm.model'
+import FollowUp from './followUp.model'
 
 export const createUser = async (payload: UserInterface) => {
 	Logger.info('Inside create User service')
@@ -35,7 +29,7 @@ export const createUser = async (payload: UserInterface) => {
 export const updateUser = async (payload: UserInterface) => {
 	Logger.info('Inside Update User service')
 	try {
-		const isExist = await User.findOne({ where: { email: payload.email } })
+		const isExist = await User.findOne({ where: { id: payload.id } })
 		if (!isExist) return false
 		// const user = await User.create(payload)
 		try {
@@ -171,22 +165,142 @@ export const getAllSamparkVrund = async (filter: Partial<SamparkVrundInterface>)
 		if (!user) {
 			return null
 		}
-		let result: any = []
-		await Promise.all(
-			user?.rows?.map(async (item) => {
-				const list = await Promise.all(
-					item?.dataValues?.yuvaks?.map(
-						async (yuvak) => await User.findOne({ where: { id: yuvak } })
-					)
-				)
-				result.push({ ...item?.dataValues, yuvaksList: list })
-				return list
-			})
-		)
-		return result
+		// let result: any = []
+		// await Promise.all(
+		// 	user?.rows?.map(async (item) => {
+		// 		const list = await Promise.all(
+		// 			item?.dataValues?.yuvaks?.map(
+		// 				async (yuvak) => await User.findOne({ where: { id: yuvak } })
+		// 			)
+		// 		)
+		// 		result.push({ ...item?.dataValues, yuvaksList: list })
+		// 		return list
+		// 	})
+		// )
+		return user
 	} catch (err) {
 		Logger.error(err)
 		return null
 	}
 }
 
+export const createKarykarm = async (payload: KarykarmInterface) => {
+	Logger.info('Inside create User service')
+	try {
+		const isExist = await Karykarm.findOne({ where: { karykarmTime: payload.karykarmTime } })
+		if (isExist) return false
+		const karykarm = await Karykarm.create(payload)
+		return karykarm
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const updateKarykarm = async (payload: KarykarmInterface) => {
+	Logger.info('Inside create User service')
+	try {
+		const isExist = await Karykarm.findOne({ where: { karykarmTime: payload.karykarmTime } })
+		if (!isExist) return false
+		try {
+			const karykarm = await Karykarm.findOne({
+				where: {
+					karykarmTime: payload.karykarmTime,
+				},
+			})
+				.then((result) => {
+					result!.update(
+						{
+							...payload,
+						},
+						{
+							where: {
+								karykarmTime: payload.karykarmTime,
+							},
+						}
+					)
+				})
+				.catch((error) => {
+					Logger.error(error)
+					return null
+				})
+			return karykarm
+		} catch (error) {
+			Logger.error(error)
+		}
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const followUpInitiate = async (payload: KarykarmInterface) => {
+	Logger.info('Inside create User service')
+	try {
+		const isExist = await Karykarm.findOne({ where: { karykarmTime: payload.karykarmTime } })
+		if (!isExist) return false
+		try {
+			const karykarm = await Karykarm.findOne({
+				where: {
+					karykarmTime: payload.karykarmTime,
+				},
+			})
+				.then((result) => {
+					result!.update(
+						{
+							followUpStart: true,
+						},
+						{
+							where: {
+								karykarmTime: payload.karykarmTime,
+							},
+						}
+					)
+				})
+				.catch((error) => {
+					Logger.error(error)
+					return null
+				})
+			// if (karykarm) {
+			const userList = await User.findAll()
+			await Promise.all(
+				userList?.map(
+					async (item) =>
+						await FollowUp.create({
+							id: uuid(),
+							followUp: false,
+							attendance: false,
+							userId: item?.dataValues?.id,
+							karykarmId: payload.id,
+						})
+				)
+			)
+			// }
+			return karykarm
+		} catch (error) {
+			Logger.error(error)
+		}
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const getFollowUpList = async () => {
+	Logger.info('Inside Get User Service')
+	try {
+		const followUpList = await FollowUp.findAndCountAll({
+			include: [
+				{ model: User, as: 'userData', foreignKey: 'userId' },
+				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
+			],
+		})
+		if (!followUpList) {
+			return null
+		}
+		return followUpList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}

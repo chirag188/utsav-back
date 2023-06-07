@@ -1,5 +1,10 @@
 import { v4 as uuid } from 'uuid'
-import { SamparkVrundInterface, UserInterface, satsangProfileInterface } from '@interfaces/user'
+import {
+	KarykarmInterface,
+	SamparkVrundInterface,
+	UserInterface,
+	satsangProfileInterface,
+} from '@interfaces/user'
 import { Request, Response } from 'express'
 // import jwt from 'jsonwebtoken'
 import { Logger } from '@config/logger'
@@ -7,32 +12,26 @@ import { registerRequest, satsangProfileRequest } from '@user/validator'
 import { errorHandler, responseHandler } from '@helpers/responseHandlers'
 import { hash } from 'bcrypt'
 import {
+	createKarykarm,
 	createSamparkVrund,
 	createSatsangProfile,
 	createUser,
+	followUpInitiate,
 	getAllSamparkVrund,
+	getFollowUpList,
 	getUserService,
+	updateKarykarm,
 	updateSatsangProfile,
 	updateUser,
 } from '@user/service'
 import Messages from '@helpers/messages'
-// import { sendEmail, sendMultipleEmails } from '@helpers/email'
-// import { sendSMS } from '@helpers/sms'
-// import axios from 'axios'
-// import Config from '@config/config'
-// import { subscribeTopic, unSubscribeTopic } from '@notification/service'
-// import { sendNotification, unsubscribeFromTopic } from '@helpers/fcm'
-// import { authenticatorGenerator, validateAuthCode } from '@helpers/authenticator'
-// import moment from 'moment'
-// import { caxtonOnboardInterface, kybPayloadInterface } from '@interfaces/caxton'
-// import { encryptCaxtonPassword, randomStringGen } from '@helpers/encryptionHelper'
-// import deviceDetector from '@helpers/deviceDetector'
 
 export const createUserApi = async (req: Request, res: Response) => {
 	Logger.info('Inside user register controller')
 
 	try {
 		const {
+			// username,
 			firstname,
 			middlename,
 			lastname,
@@ -55,7 +54,9 @@ export const createUserApi = async (req: Request, res: Response) => {
 			addressLine1,
 			gender,
 			id,
+			samparkVrund,
 		}: {
+			// username: string
 			firstname: string
 			middlename: string
 			lastname: string
@@ -78,10 +79,14 @@ export const createUserApi = async (req: Request, res: Response) => {
 			addressLine1: string
 			gender: string
 			id: string
+			samparkVrund: string
 		} = req.body
 
 		const userObject: UserInterface = {
-			id: id ? id : uuid(),
+			id,
+			// username: username
+			// 	? username
+			// 	: `${firstname.toLowerCase()}${Math.floor(Math.random() * (999 - 100 + 1) + 100)}`,
 			firstname,
 			middlename,
 			lastname,
@@ -94,7 +99,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			married,
 			education,
 			mandal,
-			email,
+			email: email ? email : `${firstname}@yopmail.com`,
 			seva,
 			sevaIntrest,
 			password,
@@ -103,6 +108,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			DOB,
 			addressLine1,
 			gender,
+			samparkVrund,
 		}
 
 		const validator = await registerRequest(userObject)
@@ -129,6 +135,9 @@ export const createUserApi = async (req: Request, res: Response) => {
 				data: { user },
 			})
 		} else {
+			userObject.id = id
+				? id
+				: `${firstname.toLowerCase()}${Math.floor(Math.random() * (999 - 100 + 1) + 100)}`
 			const user = await createUser(userObject)
 			if (user === false) {
 				return errorHandler({
@@ -277,21 +286,25 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 		const {
 			karykar1profileId,
 			karykar2profileId,
-			yuvaks,
+			socs,
+			vrundName,
 		}: {
 			karykar1profileId: string
 			karykar2profileId: string
-			yuvaks: string[]
+			socs: string[]
+			vrundName: string
 		} = req.body
 
 		const samparkVrundObject: SamparkVrundInterface = {
 			karykar1profileId,
 			karykar2profileId,
-			yuvaks,
+			socs,
+			vrundName,
 		}
 
-		const karykar1 = await getUserService({ id: karykar1profileId })
-		if (karykar1 === null) {
+		const karykar1 = await getUserService({ id: karykar1profileId, userType: 'Karykar' })
+		const karykar2 = await getUserService({ id: karykar2profileId, userType: 'Karykar' })
+		if (karykar1 === null || karykar2 === null) {
 			return errorHandler({
 				res,
 				statusCode: 400,
@@ -329,6 +342,16 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 				err: Messages.EMAIL_EXIST,
 			})
 		}
+		// Karykar 1
+		await updateUser({
+			...karykar1?.dataValues,
+			samparkVrund: samparkVrund?.dataValues?.vrundName,
+		})
+		// Karykar 2
+		await updateUser({
+			...karykar2?.dataValues,
+			samparkVrund: samparkVrund?.dataValues?.vrundName,
+		})
 		return responseHandler({
 			res,
 			status: 200,
@@ -342,6 +365,172 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 	}
 }
 
+export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
+	Logger.info('Inside user register controller')
+
+	try {
+		const {
+			firstname,
+			lastname,
+			mobileNumber,
+			mobileUser,
+			email,
+			socName,
+			userType,
+			id,
+			samparkVrund,
+		}: {
+			firstname: string
+			lastname: string
+			mobileNumber: number
+			mobileUser: string
+			email: string
+			socName: string
+			userType: string
+			id: string
+			samparkVrund: string
+		} = req.body
+
+		const userObject: UserInterface = {
+			id: id ? id : uuid(),
+			firstname,
+			lastname,
+			mobileNumber,
+			mobileUser,
+			email,
+			socName,
+			userType: userType === 'Karykar' ? 'Karykar' : 'Yuvak',
+			gender: 'male',
+			samparkVrund,
+		}
+
+		if (id) {
+			const user = await updateUser(userObject)
+			if (user === false) {
+				return errorHandler({
+					res,
+					statusCode: 409,
+					err: Messages.NOT_EMAIL_EXIST,
+				})
+			}
+			return responseHandler({
+				res,
+				status: 200,
+				msg: Messages.YUVAK_UPDATED_SUCCESS,
+				data: { user },
+			})
+		}
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const createKarykarmApi = async (req: Request, res: Response) => {
+	Logger.info('Inside SamparkVrund controller')
+
+	try {
+		const {
+			id,
+			karykarmName,
+			karykarmTime,
+			followUpStart,
+			followUpEnd,
+			attendanceStart,
+			attendanceEnd,
+		}: {
+			id: string
+			karykarmName: string
+			karykarmTime: Date
+			followUpStart: boolean
+			followUpEnd: boolean
+			attendanceStart: boolean
+			attendanceEnd: boolean
+		} = req.body
+
+		const karykarmObject: KarykarmInterface = {
+			id: id ? id : uuid(),
+			karykarmName,
+			karykarmTime,
+			followUpStart,
+			followUpEnd,
+			attendanceStart,
+			attendanceEnd,
+		}
+
+		if (id) {
+			const karykarm = await updateKarykarm(karykarmObject)
+			if (karykarm === false) {
+				return errorHandler({
+					res,
+					statusCode: 409,
+					err: Messages.NOT_EMAIL_EXIST,
+				})
+			}
+			return responseHandler({
+				res,
+				status: 200,
+				msg: Messages.YUVAK_UPDATED_SUCCESS,
+				data: { karykarm },
+			})
+		} else {
+			const karykarm = await createKarykarm(karykarmObject)
+			if (karykarm === false) {
+				return errorHandler({
+					res,
+					statusCode: 409,
+					err: Messages.EMAIL_EXIST,
+				})
+			}
+			return responseHandler({
+				res,
+				status: 200,
+				msg: Messages.YUVAK_CREATED_SUCCESS,
+				data: { karykarm },
+			})
+		}
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const followUpInitiateApi = async (req: Request, res: Response) => {
+	Logger.info('Inside SamparkVrund controller')
+
+	try {
+		const {
+			id,
+			karykarmTime,
+		}: {
+			id: string
+			karykarmTime: Date
+		} = req.body
+
+		const karykarmObject: KarykarmInterface = {
+			id,
+			karykarmTime,
+		}
+
+		const karykarm = await followUpInitiate(karykarmObject)
+		if (karykarm === false) {
+			return errorHandler({
+				res,
+				statusCode: 409,
+				err: Messages.NOT_EMAIL_EXIST,
+			})
+		}
+		return responseHandler({
+			res,
+			status: 200,
+			msg: Messages.YUVAK_UPDATED_SUCCESS,
+			data: { karykarm },
+		})
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
 // export const login = async (req: Request, res: Response) => {
 // 	try {
 // 		Logger.info('Inside Login controller')
@@ -553,8 +742,6 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 	try {
 		Logger.info('inside get user controller')
-		// const { userId } = req.params
-		// const { id } = req.user
 		const user = await getAllSamparkVrund({})
 		if (user === null) {
 			return errorHandler({
@@ -595,568 +782,21 @@ export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 	}
 }
 
-// export const getUserByAuth = async (req: Request, res: Response) => {
-// 	try {
-// 		Logger.info('inside get user controller')
-// 		const { id } = req.user
-// 		const user = await getUserService({ id })
-// 		if (user === null) {
-// 			return errorHandler({
-// 				res,
-// 				err: Messages.USER_NOT_FOUND,
-// 				statusCode: 502,
-// 			})
-// 		}
+export const getFollowUpListApi = async (req: Request, res: Response) => {
+	try {
+		Logger.info('inside get user controller')
+		const followUpList = await getFollowUpList()
+		if (followUpList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
 
-// 		const data = {
-// 			companyName: user.companyName,
-// 			companyRegistrationNumber: user.companyRegistrationNumber,
-// 			companyWebsite: user.companyWebsite,
-// 			email: user.email,
-// 			country: user.country,
-// 			state: user.state,
-// 			postalCode: user.postalCode,
-// 			mobileNumber: user.mobileNumber,
-// 			profilePic: user.profilePic,
-// 			mobileNoVerified: user.mobileNoVerified,
-// 			userType: user.userType,
-// 			isEchoSubscribed: user.isEchoSubscribed,
-// 			id: user.id,
-// 			blockchainWalletAddress: user.blockchainWalletAddress,
-// 			caxtonUserId: user.caxtonUserId,
-// 			twoFAStatus: user.twoFAStatus,
-// 			twoFAType: user.twoFAType,
-// 			kybStatus: user.kybStatus,
-// 			agreementSigned: user.agreementSigned,
-// 			agreementSentByAdmin: user.agreementSentByAdmin,
-// 			userAgreement: user.userAgreement,
-// 			kybAttempt: user.kybAttempt,
-// 			countryCode: user.countryCode,
-// 			ERTCADocSigned: user.ERTCADocSigned,
-// 		}
-
-// 		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data })
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 400, data: { error } })
-// 	}
-// }
-
-// export const getAllUser = async (req: Request, res: Response) => {
-// 	Logger.info('Inside Get all user controller')
-// 	try {
-// 		const {
-// 			offset,
-// 			limit,
-// 			search,
-// 			orderBy,
-// 			orderType,
-// 			userType,
-// 			kybStatus,
-// 			country,
-// 			userStatus,
-// 			entityType,
-// 		} = req.query
-// 		const strOffset = offset ? offset.toString() : '0'
-// 		const strLimit = limit ? limit.toString() : '10'
-// 		const searchText = search ? search.toString() : ''
-// 		const strorderBy = orderBy ? orderBy.toString() : 'createdAt'
-// 		const strorderType = orderType ? orderType.toString() : 'DESC'
-// 		const usertype = userType ? userType.toString() : ''
-// 		const kybstatus = kybStatus ? kybStatus.toString() : ''
-// 		const Country = country ? country.toString() : ''
-// 		const userstatus = userStatus ? userStatus.toString() : ''
-// 		const entitytype = entityType ? entityType.toString() : ''
-
-// 		const result = await getAllUserService(
-// 			parseInt(strOffset!),
-// 			parseInt(strLimit!),
-// 			searchText,
-// 			strorderBy,
-// 			strorderType,
-// 			usertype,
-// 			kybstatus,
-// 			Country,
-// 			userstatus,
-// 			entitytype
-// 		)
-// 		return responseHandler({ res, data: result, msg: Messages.USER_LIST_SUCCESS })
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 400, data: { error } })
-// 	}
-// }
-
-// export const updateUser = async (req: Request, res: Response, next: any) => {
-// 	Logger.info('Inside update User controller')
-// 	try {
-// 		const { option }: { option: string } = req.body
-
-// 		switch (option) {
-// 			case 'profile': {
-// 				const {
-// 					companyName,
-// 					companyRegistrationNumber,
-// 					companyWebsite,
-// 					country,
-// 					state,
-// 					postalCode,
-// 					name,
-// 					DOB,
-// 					profilePic,
-// 					lastLogout,
-// 					fcmToken,
-// 					addressLine1,
-// 					addressLine2,
-// 					firstLogin,
-// 				}: {
-// 					companyName: string
-// 					companyRegistrationNumber: string
-// 					companyWebsite: string
-// 					country: string
-// 					state: string
-// 					postalCode: number
-// 					name: string
-// 					DOB: Date
-// 					profilePic: string
-// 					lastLogout: Date
-// 					fcmToken: string
-// 					addressLine1: string
-// 					addressLine2: string
-// 					firstLogin: boolean
-// 				} = req.body
-// 				const { id } = req.user
-// 				const user = await getUserService({ id })
-// 				if (user === null) {
-// 					return errorHandler({
-// 						res,
-// 						err: Messages.USER_NOT_FOUND,
-// 						statusCode: 502,
-// 					})
-// 				}
-// 				const validator = await updateUserValidation({
-// 					companyName,
-// 					companyRegistrationNumber,
-// 					companyWebsite,
-// 					country,
-// 					state,
-// 					postalCode,
-// 					name,
-// 					DOB,
-// 					profilePic,
-// 					lastLogout,
-// 					fcmToken,
-// 					addressLine1,
-// 					addressLine2,
-// 					firstLogin,
-// 				})
-
-// 				if (validator.error) {
-// 					return errorHandler({ res, err: validator.message })
-// 				}
-// 				const payload: Partial<UserInterface> = {
-// 					id: user.id,
-// 					email: user.email,
-// 					mobileNumber: user.mobileNumber,
-// 					userType: user.userType === 'INVESTOR' ? 'INVESTOR' : 'PROJECT_DEVELOPER',
-// 					entityType: user.entityType === 'COMPANY' ? 'COMPANY' : 'INDIVIDUAL',
-// 					companyName,
-// 					companyRegistrationNumber,
-// 					companyWebsite,
-// 					country,
-// 					state,
-// 					postalCode,
-// 					name,
-// 					DOB,
-// 					profilePic,
-// 					lastLogout,
-// 					addressLine1,
-// 					addressLine2,
-// 					firstLogin,
-// 				}
-// 				const result = await updateUserService(payload, id)
-
-// 				if (result === null) {
-// 					return errorHandler({ res, statusCode: 500, err: Messages.USER_UPDATE_FAILED })
-// 				}
-// 				if (fcmToken) {
-// 					await unSubscribeTopic(fcmToken, user.id, `user-${user.id}`, req.headers.authorization!)
-// 					if (user.isEchoSubscribed === true)
-// 						await unSubscribeTopic(fcmToken, user.id, `echo-users`, req.headers.authorization!)
-// 				}
-
-// 				return responseHandler({ res, msg: Messages.USER_UPDATE_SUCCESS })
-// 			}
-// 			case 'password': {
-// 				const { oldPassword, newPassword }: { oldPassword: string; newPassword: string } = req.body
-// 				const { id } = req.user
-// 				const validator = await changePasswordValidation({ oldPassword, newPassword })
-// 				if (validator.error) {
-// 					return errorHandler({ res, err: validator.message })
-// 				}
-// 				const user = await getUserService({ id })
-// 				if (user === null) {
-// 					return errorHandler({
-// 						res,
-// 						err: Messages.USER_NOT_FOUND,
-// 						statusCode: 502,
-// 					})
-// 				}
-// 				const checkPass = await checkPassword(oldPassword, user!.password)
-// 				if (!checkPass) {
-// 					return errorHandler({
-// 						res,
-// 						err: Messages.INVALID_PASSWORD,
-// 						statusCode: 502,
-// 					})
-// 				}
-// 				const passwordData = await checkPassword(newPassword, user!.password)
-// 				if (passwordData) {
-// 					return errorHandler({
-// 						res,
-// 						err: Messages.RESET_SAME_PASSWORD,
-// 						statusCode: 502,
-// 					})
-// 				}
-// 				const encryptedPassword = await hash(newPassword, 10)
-// 				const userData = await createPasswordService(
-// 					encryptedPassword,
-// 					user!.email,
-// 					new Date(req.user.iat * 1000)
-// 				)
-// 				if (userData === null) {
-// 					return errorHandler({ res, err: Messages.CHANGE_PASSWORD_FAILED })
-// 				} else {
-// 					const token = req.headers.authorization?.split(' ')[1]
-// 					const data: any = jwt.decode(token!)
-// 					if (data?.deviceId) {
-// 						const deviceId = data?.deviceId
-// 						await removeDevicesExceptOne(req.user.id, deviceId)
-// 					}
-
-// 					return responseHandler({ res, msg: Messages.CHANGE_PASSWORD_SUCCESS })
-// 				}
-// 			}
-// 			default: {
-// 				return errorHandler({
-// 					res,
-// 					statusCode: 406,
-// 					err: Messages.WRONG_INPUT_PROVIDED,
-// 				})
-// 			}
-// 		}
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 400, data: { error } })
-// 	}
-// }
-
-// export const updateUserStatus = async (req: Request, res: Response) => {
-// 	Logger.info('Inside update user status controller')
-// 	try {
-// 		const { userId } = req.params
-// 		const {
-// 			isPurchaser,
-// 			isBlocked,
-// 		}: {
-// 			isPurchaser: boolean
-// 			isBlocked: boolean
-// 		} = req.body
-
-// 		const user = await getUserService({ id: userId })
-// 		if (user === null) {
-// 			return errorHandler({
-// 				res,
-// 				err: Messages.USER_NOT_FOUND,
-// 				statusCode: 502,
-// 			})
-// 		}
-// 		const validator = await updateUserValidation({
-// 			isPurchaser,
-// 			isBlocked,
-// 		})
-// 		if (validator.error) {
-// 			return errorHandler({ res, err: validator.message })
-// 		}
-
-// 		const result = await updateUserService({ isPurchaser, isBlocked }, userId)
-
-// 		if (result === null)
-// 			return errorHandler({ res, statusCode: 500, err: Messages.USER_UPDATE_FAILED })
-
-// 		return responseHandler({ res, msg: Messages.USER_STATUS_UPDATE_SUCCESS })
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 400, data: { error } })
-// 	}
-// }
-
-// export const createBankAccount = async (req: Request, res: Response) => {
-// 	Logger.info('Inside Create Bank Account controller')
-// 	try {
-// 		let {
-// 			account_number,
-// 			routing_number,
-// 			IBAN,
-// 			account_id,
-// 			status,
-// 			description,
-// 			trackingRef,
-// 			fingerprint,
-// 			billing_name,
-// 			billing_city,
-// 			billing_country,
-// 			billing_line1,
-// 			billing_line2,
-// 			billing_district,
-// 			billing_postalCode,
-// 			bank_name,
-// 			bank_city,
-// 			bank_country,
-// 			bank_line1,
-// 			bank_line2,
-// 			bank_district,
-// 			type_of_account,
-// 		} = req.body
-// 		const userId = req.user.id
-// 		const payload: BankDetailsInterfacte = {
-// 			id: uuid(),
-// 			account_number,
-// 			routing_number,
-// 			IBAN,
-// 			account_id,
-// 			status,
-// 			description,
-// 			tracking_ref: trackingRef,
-// 			fingerprint,
-// 			billing_name,
-// 			billing_city,
-// 			billing_country,
-// 			billing_line1,
-// 			billing_line2,
-// 			billing_district,
-// 			billing_postalCode,
-// 			bank_name,
-// 			bank_city,
-// 			bank_country,
-// 			bank_line1,
-// 			bank_line2,
-// 			bank_district,
-// 			userId,
-// 			type_of_account,
-// 		}
-// 		let circleError: boolean = false
-// 		let errMessage: string = ''
-// 		if (Config.CIRCLE.CIRCLE_TEST_DATA) {
-// 			Logger.info('Adding default circle data')
-// 			payload.account_number = Config.CIRCLE.ACCOUNT_NUMBER!
-// 			payload.routing_number = Config.CIRCLE.ROUTING_NUMBER!
-// 			payload.billing_city = Config.CIRCLE.BILLING_CITY!
-// 			payload.billing_country = Config.CIRCLE.BILLING_COUNTRY!
-// 			payload.billing_district = Config.CIRCLE.BILLING_DISTRICT!
-// 			payload.billing_line1 = Config.CIRCLE.BILLING_LINE1!
-// 			payload.billing_postalCode = Config.CIRCLE.POSTAL_CODE!
-// 			payload.bank_country = Config.CIRCLE.BANK_COUNTRY!
-// 			payload.bank_district = Config.CIRCLE.BANK_DISTRICT!
-// 		}
-// 		const circleResponse = (await axios
-// 			.post(`${Config.PAYMENT.CREATE_BANK_ACCOUNT}`, payload, {
-// 				headers: {
-// 					authorization: req.headers.authorization!,
-// 				},
-// 			})
-// 			.catch((err) => {
-// 				Logger.error(err)
-// 				circleError = true
-// 				errMessage = err.response.data.msg
-// 			}))!
-// 		if (circleError) {
-// 			await axios
-// 				.post(
-// 					`${Config.NOTIFICATION.SEND}/${req.user.id}`,
-// 					{
-// 						title: 'Bank A/C',
-// 						body: `Attention! Your ${payload.bank_name} A/C linking with EnverX is failed. Please try again.`,
-// 						topic: `user-${req.user.id}`,
-// 					},
-// 					{
-// 						headers: {
-// 							authorization: req.headers.authorization!,
-// 						},
-// 					}
-// 				)
-// 				.catch((err) => {
-// 					Logger.error(err)
-// 				})
-// 			return errorHandler({
-// 				res,
-// 				statusCode: 500,
-// 				err: errMessage,
-// 			})
-// 		}
-// 		payload.account_id = circleResponse.data.data.data.id
-// 		payload.status = circleResponse.data.data.data.status
-// 		payload.tracking_ref = circleResponse.data.data.data.trackingRef
-// 		payload.fingerprint = circleResponse.data.data.data.fingerprint
-// 		payload.description = circleResponse.data.data.data.description
-// 		const bankData = await createBankAccountService(payload)
-// 		if (bankData === null) {
-// 			await axios
-// 				.post(
-// 					`${Config.NOTIFICATION.SEND}/${req.user.id}`,
-// 					{
-// 						title: 'Bank A/C',
-// 						body: `Attention! Your ${payload.bank_name} A/C linking with EnverX is failed. Please try again.`,
-// 						topic: `user-${req.user.id}`,
-// 					},
-// 					{
-// 						headers: {
-// 							authorization: req.headers.authorization!,
-// 						},
-// 					}
-// 				)
-// 				.catch((err) => {
-// 					Logger.error(err)
-// 				})
-// 			return errorHandler({
-// 				res,
-// 				statusCode: 500,
-// 				err: Messages.BANK_ACCOUNT_CREATED_FAILED,
-// 			})
-// 		}
-
-// 		await axios
-// 			.post(
-// 				`${Config.NOTIFICATION.SEND}/${req.user.id}`,
-// 				{
-// 					title: 'Bank A/C',
-// 					body: `${payload.bank_name} a/c is linked to EnverX successfully`,
-// 					topic: `user-${req.user.id}`,
-// 				},
-// 				{
-// 					headers: {
-// 						authorization: req.headers.authorization!,
-// 					},
-// 				}
-// 			)
-// 			.catch((err) => {
-// 				Logger.error(err)
-// 			})
-// 		return responseHandler({
-// 			res,
-// 			status: 201,
-// 			msg: Messages.BANK_ACCOUNT_CREATED_SUCCESS,
-// 			data: bankData,
-// 		})
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 400, data: { error } })
-// 	}
-// }
-
-// export const updatePriceLastUpdated = async (req: Request, res: Response) => {
-// 	Logger.info('Inside Price Last Updated controller')
-// 	try {
-// 		const validator = await priceLastUpdatedValidation(req.body)
-// 		if (validator.error) {
-// 			return errorHandler({ res, err: validator.message })
-// 		}
-
-// 		const data = await updateEchoUserService(req.body, { id: req.user.id })
-// 		if (data === 0)
-// 			return errorHandler({
-// 				res,
-// 				statusCode: 402,
-// 			})
-
-// 		return responseHandler({ res, msg: Messages.UPDATE_ECHO_USER_SUCCESS })
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, data: { error } })
-// 	}
-// }
-
-// export const createNewUser = async (req: Request, res: Response) => {
-// 	Logger.info('Inside create New User controller')
-// 	try {
-// 		const payload: UserInterface = req.body
-// 		const { email, password, userType } = req.body
-// 		const validator = await createNewUserValidator({ email, password, userType })
-// 		if (validator.error) {
-// 			return errorHandler({ res, statusCode: 400, err: validator.message })
-// 		}
-
-// 		const checkEmail = await getUserService({
-// 			email: payload.email,
-// 		})
-// 		if (checkEmail) return errorHandler({ res, statusCode: 409, err: Messages.EMAIL_EXIST })
-
-// 		payload.password! = await hash(payload.password!, 10)
-// 		payload.id = uuid()
-// 		payload.entityType = 'COMPANY'
-
-// 		const user = await createNewUserService(payload)
-
-// 		const result = await getSumSubAccessTokenService(user.id)
-// 		if (!result) {
-// 			return errorHandler({
-// 				res,
-// 				err: Messages.SOMETHING_WENT_WRONG,
-// 				statusCode: 500,
-// 			})
-// 		}
-// 		const emailPayload = {
-// 			data: `${Config.FE_KYB_URL}/${result.token}`,
-// 			email: user.email,
-// 		}
-// 		const emailSent = await sendEmail(emailPayload, 'sendKYBLink')
-
-// 		if (emailSent?.error) {
-// 			return errorHandler({
-// 				res,
-// 				statusCode: 400,
-// 				err: Messages.KYB_LINK_SENT_EMAIL_FAILED,
-// 				data: emailSent?.error,
-// 			})
-// 		}
-
-// 		return responseHandler({
-// 			res,
-// 			status: 201,
-// 			msg: Messages.REGISTRATION_SUCCESS_KYB_LINK_SENT,
-// 			data: { email },
-// 		})
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 500, err: Messages.INTERNAL_SERVER_ERROR })
-// 	}
-// }
-
-// export const sendBulkEmails = async (req: Request, res: Response) => {
-// 	Logger.info('Inside send BulkEmails controller')
-// 	try {
-// 		const { emails, templateId, data } = req.body
-
-// 		if (!emails || !templateId || !data)
-// 			return errorHandler({
-// 				res,
-// 				statusCode: 400,
-// 				err: 'Please send Emails Array, templateId and data in payload',
-// 			})
-
-// 		const emailSent = await sendMultipleEmails(emails, templateId, data)
-
-// 		if (emailSent?.error)
-// 			return errorHandler({
-// 				res,
-// 				statusCode: 400,
-// 				err: 'Error Sending Emails',
-// 				data: emailSent?.error,
-// 			})
-
-// 		return responseHandler({ res, status: 200, msg: 'Mails sent successfully' })
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 500, data: { error } })
-// 	}
-// }
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: followUpList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}

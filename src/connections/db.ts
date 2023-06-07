@@ -3,11 +3,10 @@ import _admin from '@dummy/admin/admin.model'
 import user from '@user/user.model'
 import Config from '@config/config'
 import { Logger } from '../config/logger'
-import notification from '@notification/notification.model'
-import Device from '@user/device.model'
-import Countries from '@user/countries.model'
 import SatsangProfile from '@user/SatsangProfile.model'
 import SamparkVrund from '@user/SamparkVrund.model'
+import Karykarm from '@user/karykarm.model'
+import FollowUp from '@user/followUp.model'
 
 const _database: string = Config.DB.DB_NAME!
 // const _dialect: string = Config.DB.DB_DIALECT!
@@ -25,7 +24,7 @@ const db = new Sequelize({
 	port: Number(_port),
 	storage: ':memory:',
 	logging: (msg) => Logger.info(msg),
-	models: [_admin, user, notification, SatsangProfile, SamparkVrund, Device, Countries],
+	models: [_admin, user, SatsangProfile, SamparkVrund, Karykarm, FollowUp],
 	define: {
 		freezeTableName: true,
 	},

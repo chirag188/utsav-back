@@ -5,7 +5,7 @@ export const registerRequest = async (data: Object) => {
 	Logger.info('Inside  register request validator')
 
 	const Schema = Joi.object({
-		id: Joi.string().required(),
+		id: Joi.string(),
 		firstname: Joi.string().required(),
 		middlename: Joi.string().required(),
 		lastname: Joi.string().required(),
@@ -27,6 +27,8 @@ export const registerRequest = async (data: Object) => {
 		DOB: Joi.date().required(),
 		addressLine1: Joi.string().required(),
 		gender: Joi.string().required(),
+		// username: Joi.string().required(),
+		samparkVrund: Joi.string(),
 	})
 
 	const validate = Schema.validate(data)
