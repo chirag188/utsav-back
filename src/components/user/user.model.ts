@@ -1,14 +1,6 @@
 import { Optional } from 'sequelize'
 
-import {
-	Table,
-	Model,
-	Column,
-	DataType,
-	AfterCreate,
-	AfterUpdate,
-	HasOne,
-} from 'sequelize-typescript'
+import { Table, Model, Column, DataType, AfterCreate, AfterUpdate } from 'sequelize-typescript'
 
 import { UserInterface } from '@interfaces/user'
 import { afterCreateHooks, afterUpdateHooks } from './hooks'

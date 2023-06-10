@@ -291,7 +291,12 @@ export const getFollowUpList = async () => {
 	try {
 		const followUpList = await FollowUp.findAndCountAll({
 			include: [
-				{ model: User, as: 'userData', foreignKey: 'userId' },
+				{
+					model: User,
+					as: 'userData',
+					foreignKey: 'userId',
+					attributes: ['mobileNumber', 'email'],
+				},
 				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
 			],
 		})
