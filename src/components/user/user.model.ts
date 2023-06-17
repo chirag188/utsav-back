@@ -35,6 +35,12 @@ class User extends Model<UserInterface, UserAttributes> {
 	area!: string
 	@Column({ defaultValue: false })
 	married!: boolean
+	@Column({ defaultValue: false })
+	app!: boolean
+	@Column({ defaultValue: true })
+	active!: boolean
+	@Column
+	activeReason!: string
 	@Column
 	education!: string
 	@Column({ defaultValue: 'UTSAV' })

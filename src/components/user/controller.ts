@@ -17,8 +17,10 @@ import {
 	createSatsangProfile,
 	createUser,
 	followUpInitiate,
+	getAllKarykarm,
 	getAllSamparkKarykar,
 	getAllSamparkVrund,
+	getAllUser,
 	getFollowUpList,
 	getUserService,
 	updateKarykarm,
@@ -766,6 +768,44 @@ export const getAllSamparkKarykarAPI = async (req: Request, res: Response) => {
 			})
 		}
 		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: karykarList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getAllUserAPI = async (req: Request, res: Response) => {
+	try {
+		Logger.info('inside get user controller')
+		const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
+		const userList = await getAllUser(userType, samparkVrund, active)
+		if (userList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: userList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getAllKarykarmAPI = async (req: Request, res: Response) => {
+	try {
+		Logger.info('inside get user controller')
+		// const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
+		const karykarmList = await getAllKarykarm()
+		if (karykarmList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: karykarmList })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })

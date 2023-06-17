@@ -204,6 +204,54 @@ export const getAllSamparkKarykar = async (filter: Partial<User>) => {
 	}
 }
 
+export const getAllUser = async (
+	userType: string | any,
+	samparkVrund: string | any,
+	active: boolean | any
+) => {
+	Logger.info('Inside Get User Service')
+	try {
+		const userList = await User.findAndCountAll({
+			where: {
+				...(userType && { userType }),
+				...(samparkVrund && { samparkVrund }),
+				active,
+			},
+		})
+		if (!userList) {
+			return null
+		}
+		return userList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
+export const getAllKarykarm = async (
+	// userType: string | any,
+	// samparkVrund: string | any,
+	// active: boolean | any
+) => {
+	Logger.info('Inside Get User Service')
+	try {
+		const karykarmList = await Karykarm.findAndCountAll({
+			// where: {
+			// 	...(userType && { userType }),
+			// 	...(samparkVrund && { samparkVrund }),
+			// 	active,
+			// },
+		})
+		if (!karykarmList) {
+			return null
+		}
+		return karykarmList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
 export const createKarykarm = async (payload: KarykarmInterface) => {
 	Logger.info('Inside create User service')
 	try {

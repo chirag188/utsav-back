@@ -6,8 +6,10 @@ import {
 	createSatsangProfileApi,
 	createUserApi,
 	followUpInitiateApi,
+	getAllKarykarmAPI,
 	getAllSamparkKarykarAPI,
 	getAllSamparkVrundAPI,
+	getAllUserAPI,
 	getFollowUpListApi,
 	loginApi,
 } from '@user/controller'
@@ -25,4 +27,6 @@ router.put('/followUpInitiate', followUpInitiateApi)
 router.get('/getfollowUpList', getFollowUpListApi)
 router.post('/login', loginApi)
 router.get('/getAllSamparkKarykar', getAllSamparkKarykarAPI)
+router.get('/getAllUser', getAllUserAPI)
+router.get('/getAllKarykarm', getAllKarykarmAPI)
 export default router

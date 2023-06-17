@@ -11,6 +11,9 @@ export interface UserInterface {
 	nearBy?: string
 	area?: string
 	married?: boolean
+	app?: boolean
+	active?: boolean
+	activeReason?: string
 	education?: string
 	mandal?: string
 	email?: string
