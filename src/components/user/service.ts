@@ -191,7 +191,7 @@ export const getAllSamparkKarykar = async (filter: Partial<User>) => {
 	try {
 		const karykarList = await User.findAndCountAll({
 			where: {
-				userType: 'Karykar',
+				userType: 'karykar',
 			},
 		})
 		if (!karykarList) {
