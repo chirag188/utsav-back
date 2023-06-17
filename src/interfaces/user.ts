@@ -17,7 +17,7 @@ export interface UserInterface {
 	seva?: string
 	sevaIntrest?: string
 	password?: string
-	userType: 'Karykar' | 'Yuvak' | 'Nirikshak' | 'Sanchalak'
+	userType: 'karykar' | 'yuvak' | 'nirikshak' | 'sanchalak'
 	profilePic?: string
 	DOB?: Date
 	addressLine1?: string

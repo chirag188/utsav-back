@@ -22,7 +22,7 @@ export const registerRequest = async (data: Object) => {
 		seva: Joi.string().required(),
 		sevaIntrest: Joi.string().required(),
 		password: Joi.string().required(),
-		userType: Joi.string().required().valid('Karykar', 'Yuvak'),
+		userType: Joi.string().required().valid('karykar', 'yuvak'),
 		profilePic: Joi.string().required(),
 		DOB: Joi.date().required(),
 		addressLine1: Joi.string().required(),

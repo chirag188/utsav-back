@@ -105,7 +105,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			seva,
 			sevaIntrest,
 			password,
-			userType: userType === 'Karykar' ? 'Karykar' : 'Yuvak',
+			userType: userType === 'karykar' ? 'karykar' : 'yuvak',
 			profilePic,
 			DOB,
 			addressLine1,
@@ -304,8 +304,8 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			vrundName,
 		}
 
-		const karykar1 = await getUserService({ id: karykar1profileId, userType: 'Karykar' })
-		const karykar2 = await getUserService({ id: karykar2profileId, userType: 'Karykar' })
+		const karykar1 = await getUserService({ id: karykar1profileId, userType: 'karykar' })
+		const karykar2 = await getUserService({ id: karykar2profileId, userType: 'karykar' })
 		if (karykar1 === null || karykar2 === null) {
 			return errorHandler({
 				res,
@@ -401,7 +401,7 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 			mobileUser,
 			email,
 			socName,
-			userType: userType === 'Karykar' ? 'Karykar' : 'Yuvak',
+			userType: userType === 'karykar' ? 'karykar' : 'yuvak',
 			gender: 'male',
 			samparkVrund,
 		}
