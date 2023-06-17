@@ -1,3 +1,4 @@
+import bcrypt from 'bcrypt'
 import { v4 as uuid } from 'uuid'
 import { Logger } from '@config/logger'
 import {
@@ -16,10 +17,11 @@ import FollowUp from './followUp.model'
 export const createUser = async (payload: UserInterface) => {
 	Logger.info('Inside create User service')
 	try {
-		const isExist = await User.findOne({ where: { email: payload.email } })
+		const isExist = await User.findOne({ where: { mobileNumber: payload.mobileNumber } })
 		if (isExist) return false
 		const user = await User.create(payload)
-		return user
+		if (user) return 'User Created Successfully'
+		return 'Something went wrong'
 	} catch (error) {
 		Logger.error(error)
 		throw error
@@ -184,6 +186,24 @@ export const getAllSamparkVrund = async (filter: Partial<SamparkVrundInterface>)
 	}
 }
 
+export const getAllSamparkKarykar = async (filter: Partial<User>) => {
+	Logger.info('Inside Get User Service')
+	try {
+		const karykarList = await User.findAndCountAll({
+			where: {
+				userType: 'Karykar',
+			},
+		})
+		if (!karykarList) {
+			return null
+		}
+		return karykarList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
 export const createKarykarm = async (payload: KarykarmInterface) => {
 	Logger.info('Inside create User service')
 	try {
@@ -307,5 +327,32 @@ export const getFollowUpList = async () => {
 	} catch (err) {
 		Logger.error(err)
 		return null
+	}
+}
+
+export const login = async (filter: Partial<UserInterface>) => {
+	Logger.info('Inside Get User Service')
+	try {
+		const user = await User.findOne({ where: filter })
+		if (!user) {
+			return null
+		}
+		return user
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
+export const verifyPassword = async (
+	enteredPassword: string,
+	storedPassword: string
+): Promise<boolean> => {
+	Logger.info('Inside Verify password Service')
+	try {
+		return await bcrypt.compare(enteredPassword, storedPassword)
+	} catch (err) {
+		Logger.error(err)
+		return false
 	}
 }

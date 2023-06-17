@@ -8,7 +8,7 @@ import {
 import { Request, Response } from 'express'
 // import jwt from 'jsonwebtoken'
 import { Logger } from '@config/logger'
-import { registerRequest, satsangProfileRequest } from '@user/validator'
+import { loginValidation, registerRequest, satsangProfileRequest } from '@user/validator'
 import { errorHandler, responseHandler } from '@helpers/responseHandlers'
 import { hash } from 'bcrypt'
 import {
@@ -17,12 +17,14 @@ import {
 	createSatsangProfile,
 	createUser,
 	followUpInitiate,
+	getAllSamparkKarykar,
 	getAllSamparkVrund,
 	getFollowUpList,
 	getUserService,
 	updateKarykarm,
 	updateSatsangProfile,
 	updateUser,
+	verifyPassword,
 } from '@user/service'
 import Messages from '@helpers/messages'
 
@@ -355,7 +357,7 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 		return responseHandler({
 			res,
 			status: 200,
-			msg: Messages.YUVAK_CREATED_SUCCESS,
+			msg: Messages.SAMPARK_VRUND_SUCCESS,
 			data: { samparkVrund },
 		})
 		// }
@@ -531,85 +533,55 @@ export const followUpInitiateApi = async (req: Request, res: Response) => {
 		return errorHandler({ res, statusCode: 400, data: { error } })
 	}
 }
-// export const login = async (req: Request, res: Response) => {
-// 	try {
-// 		Logger.info('Inside Login controller')
-// 		const data: { email: string; password: string } = req.body
+export const loginApi = async (req: Request, res: Response) => {
+	try {
+		Logger.info('Inside Login controller')
+		const data: { id: string; password: string } = req.body
 
-// 		const { error, message } = await loginValidation(data)
-// 		if (error) {
-// 			return errorHandler({ res, statusCode: 501, err: message })
-// 		}
+		const { error, message } = await loginValidation(data)
+		if (error) {
+			return errorHandler({ res, statusCode: 501, err: message })
+		}
 
-// 		const user = await getUserService({ email: data.email })
-// 		if (user === null) {
-// 			return errorHandler({
-// 				res,
-// 				err: Messages.USER_NOT_FOUND,
-// 				statusCode: 502,
-// 			})
-// 		}
-// 		const resData: any = {
-// 			mobileNumber: user.mobileNumber,
-// 			countryCode: user.countryCode,
-// 			email: user.email,
-// 			loginAttempt: user.loginAttempt,
-// 			loginBlockedTime: user.loginBlockedTime,
-// 			otplimit: user.otpLimit,
-// 			otpBlockTime: user.otpBlockTime,
-// 			isOTPBlocked: user.isOTPBlocked,
-// 			isLoginBlocked: user.isLoginBlocked,
-// 		}
-// 		const correctUser = await verifyPassword(data.password, user.password)
+		const user = await getUserService({ id: data.id })
+		if (user === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+		const correctUser = await verifyPassword(data.password, user.dataValues.password || '')
+		console.log({ correctUser })
 
-// 		if (!correctUser) {
-// 			user!.decrement('loginAttempt')
-// 			resData.loginAttempt -= 1
-// 			await user.save()
-// 			return errorHandler({
-// 				res,
-// 				err: Messages.INCORRECT_PASSWORD,
-// 				statusCode: 502,
-// 				data: resData,
-// 			})
-// 		}
-
-// 		if (user!.userType === 'INVESTOR' || 'PROJECT_DEVELOPER') {
-// 			// 2FA code
-// 			const otp = Math.floor(100000 + Math.random() * 900000)
-
-// 			const emailPayload = {
-// 				data: otp.toString(),
-// 				email: user!.email,
-// 			}
-
-// 			const emailSent = await sendEmail(emailPayload, 'sendVerification')
-
-// 			if (emailSent?.error) {
-// 				resData.error = emailSent?.error
-// 				return errorHandler({
-// 					res,
-// 					statusCode: 400,
-// 					err: Messages.OTP_SENT_EMAIL_FAILED,
-// 					data: resData,
-// 				})
-// 			}
-
-// 			await saveUserOTP(user.mobileNumber, user.countryCode, user.email, otp)
-// 			resData.otplimit -= 1
-// 			return responseHandler({ res, status: 200, msg: Messages.OTP_SENT_EMAIL, data: resData })
-// 		} else {
-// 			return errorHandler({
-// 				res,
-// 				err: Messages.ACCOUNT_TYPE_ERROR,
-// 				statusCode: 502,
-// 			})
-// 		}
-// 	} catch (error) {
-// 		Logger.error(error)
-// 		return errorHandler({ res, statusCode: 400, data: { error } })
-// 	}
-// }
+		if (!correctUser)
+			return errorHandler({
+				res,
+				err: Messages.INCORRECT_PASSWORD,
+				statusCode: 502,
+			})
+		return responseHandler({
+			res,
+			status: 200,
+			msg: Messages.LOGIN_SUCCESS,
+			data: { user },
+		})
+		// const resData: any = {
+		// 	mobileNumber: user.mobileNumber,
+		// 	countryCode: user.countryCode,
+		// 	email: user.email,
+		// 	loginAttempt: user.loginAttempt,
+		// 	loginBlockedTime: user.loginBlockedTime,
+		// 	otplimit: user.otpLimit,
+		// 	otpBlockTime: user.otpBlockTime,
+		// 	isOTPBlocked: user.isOTPBlocked,
+		// 	isLoginBlocked: user.isLoginBlocked,
+		// }
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
 
 // export const verifyLogin = async (req: Request, res: Response) => {
 // 	try {
@@ -776,6 +748,24 @@ export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 		// }
 
 		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: user })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getAllSamparkKarykarAPI = async (req: Request, res: Response) => {
+	try {
+		Logger.info('inside get user controller')
+		const karykarList = await getAllSamparkKarykar({})
+		if (karykarList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: karykarList })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })

@@ -21,7 +21,7 @@ class User extends Model<UserInterface, UserAttributes> {
 	middlename!: string
 	@Column
 	lastname!: string
-	@Column({ type: DataType.BIGINT })
+	@Column({ unique: true, type: DataType.BIGINT })
 	mobileNumber!: number
 	@Column
 	mobileUser!: string

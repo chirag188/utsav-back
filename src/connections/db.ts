@@ -1,5 +1,4 @@
 import { Sequelize } from 'sequelize-typescript'
-import _admin from '@dummy/admin/admin.model'
 import user from '@user/user.model'
 import Config from '@config/config'
 import { Logger } from '../config/logger'
@@ -40,34 +39,5 @@ const db = new Sequelize(
 		},
 	}
 ) // Example for postgres
-
-// const db = new Sequelize({
-// 	database: "dbutsav_4wyc",
-// 	dialect: 'postgres',
-// 	username: "dbutsav_4wyc_user",
-// 	password: "rlCCMLsGtb8Ks7DLPmFysijcGZO0YfHd",
-// 	host: 'dpg-ci23bajhp8u1a18hb67g-a.oregon-postgres.render.com?sslmode=no-verify', // default connect to localhost
-// 	port: 5432,
-// 	storage: ':memory:',
-// 	logging: (msg) => Logger.info(msg),
-// 	models: [_admin, user, SatsangProfile, SamparkVrund, Karykarm, FollowUp],
-// 	define: {
-// 		freezeTableName: true,
-// 	},
-// 	retry: {
-// 		max: Infinity,
-// 		match: [
-// 			/ConnectionError/,
-// 			/SequelizeConnectionError/,
-// 			/SequelizeConnectionRefusedError/,
-// 			/SequelizeHostNotFoundError/,
-// 			/SequelizeHostNotReachableError/,
-// 			/SequelizeInvalidConnectionError/,
-// 			/SequelizeConnectionTimedOutError/,
-// 			/SequelizeConnectionAcquireTimeoutError/,
-// 			/Connection terminated unexpectedly/,
-// 		],
-// 	},
-// })
 
 export default db

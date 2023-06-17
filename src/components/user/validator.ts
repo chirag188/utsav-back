@@ -138,24 +138,24 @@ export const samparkVrundRequest = async (data: Object) => {
 // 	return { error, message }
 // }
 
-// export const loginValidation = async (
-// 	data: Object
-// ): Promise<{ error: boolean; message: string }> => {
-// 	Logger.info('Inside login validator')
-// 	const Schema = Joi.object({
-// 		email: Joi.string().email().required(),
-// 		password: Joi.string().required(),
-// 	})
-// 	const validate = Schema.validate(data)
-// 	let error: boolean = false
-// 	let message: string = ''
-// 	if (validate.error) {
-// 		message = validate.error.details[0].message
-// 		message = message.replace(/"/g, '')
-// 		error = true
-// 	}
-// 	return { error, message }
-// }
+export const loginValidation = async (
+	data: Object
+): Promise<{ error: boolean; message: string }> => {
+	Logger.info('Inside login validator')
+	const Schema = Joi.object({
+		id: Joi.string().required(),
+		password: Joi.string().required(),
+	})
+	const validate = Schema.validate(data)
+	let error: boolean = false
+	let message: string = ''
+	if (validate.error) {
+		message = validate.error.details[0].message
+		message = message.replace(/"/g, '')
+		error = true
+	}
+	return { error, message }
+}
 
 // export const verifyLoginValidation = async (payload: {
 // 	countryCode: string
