@@ -36,6 +36,14 @@ class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	@ForeignKey(() => Karykarm)
 	@Column
 	karykarmId!: string
+	@Column
+	status!: boolean
+	@Column
+	coming!: boolean
+	@Column
+	how!: string
+	@Column
+	remark!: string
 
 	@BelongsTo(() => User, 'userId')
 	userData!: User[]

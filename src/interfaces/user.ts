@@ -26,7 +26,7 @@ export interface UserInterface {
 	addressLine1?: string
 	gender: string
 	samparkVrund?: string
-	// fcmToken?: string
+	token?: string
 }
 
 export interface satsangProfileInterface {
@@ -66,17 +66,20 @@ export interface KarykarmInterface {
 	karykarmId?: number
 	karykarmName?: string
 	karykarmTime?: Date
-	followUpStart?: boolean
-	followUpEnd?: boolean
-	attendanceStart?: boolean
-	attendanceEnd?: boolean
+	followUpStart?: string
+	// followUpEnd?: boolean
+	attendanceStart?: string
+	// attendanceEnd?: boolean
 }
 
 export interface FollowUpInterface {
 	id: string
 	followUpId?: number
-	followUp: boolean
-	attendance: boolean
-	userId: string
-	karykarmId: string
+	followUp?: boolean
+	attendance?: boolean
+	userId?: string
+	karykarmId?: string
+	coming?: boolean
+	how?: string
+	remark?: string
 }

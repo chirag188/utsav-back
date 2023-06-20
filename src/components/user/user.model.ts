@@ -57,8 +57,8 @@ class User extends Model<UserInterface, UserAttributes> {
 	userType!: string
 	@Column
 	samparkVrund!: string
-	// @Column
-	// fcmToken!: string
+	@Column
+	token!: string
 	@Column({ defaultValue: '' })
 	profilePic!: string
 	@Column({ type: DataType.DATEONLY })

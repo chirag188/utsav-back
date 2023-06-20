@@ -21,18 +21,21 @@ import {
 	getAllSamparkKarykar,
 	getAllSamparkVrund,
 	getAllUser,
+	getAttendanceList,
+	getFollowUpData,
 	getFollowUpList,
 	getUserService,
+	updateFollowUp,
 	updateKarykarm,
 	updateSatsangProfile,
 	updateUser,
 	verifyPassword,
 } from '@user/service'
 import Messages from '@helpers/messages'
+import { generateToken } from '@helpers/jwt'
+import { JWTPayload } from '@interfaces/jwtPayload'
 
 export const createUserApi = async (req: Request, res: Response) => {
-	Logger.info('Inside user register controller')
-
 	try {
 		const {
 			// username,
@@ -189,8 +192,6 @@ export const createUserApi = async (req: Request, res: Response) => {
 }
 
 export const createSatsangProfileApi = async (req: Request, res: Response) => {
-	Logger.info('Inside user register controller')
-
 	try {
 		const {
 			id,
@@ -284,8 +285,6 @@ export const createSatsangProfileApi = async (req: Request, res: Response) => {
 }
 
 export const createSamparkVrundApi = async (req: Request, res: Response) => {
-	Logger.info('Inside SamparkVrund controller')
-
 	try {
 		const {
 			karykar1profileId,
@@ -370,8 +369,6 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 }
 
 export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
-	Logger.info('Inside user register controller')
-
 	try {
 		const {
 			firstname,
@@ -431,25 +428,23 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 }
 
 export const createKarykarmApi = async (req: Request, res: Response) => {
-	Logger.info('Inside SamparkVrund controller')
-
 	try {
 		const {
 			id,
 			karykarmName,
 			karykarmTime,
 			followUpStart,
-			followUpEnd,
+			// followUpEnd,
 			attendanceStart,
-			attendanceEnd,
-		}: {
+		}: // attendanceEnd,
+		{
 			id: string
 			karykarmName: string
 			karykarmTime: Date
-			followUpStart: boolean
-			followUpEnd: boolean
-			attendanceStart: boolean
-			attendanceEnd: boolean
+			followUpStart: string
+			// followUpEnd: boolean
+			attendanceStart: string
+			// attendanceEnd: boolean
 		} = req.body
 
 		const karykarmObject: KarykarmInterface = {
@@ -457,9 +452,9 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 			karykarmName,
 			karykarmTime,
 			followUpStart,
-			followUpEnd,
+			// followUpEnd,
 			attendanceStart,
-			attendanceEnd,
+			// attendanceEnd,
 		}
 
 		if (id) {
@@ -500,20 +495,21 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 }
 
 export const followUpInitiateApi = async (req: Request, res: Response) => {
-	Logger.info('Inside SamparkVrund controller')
-
 	try {
 		const {
 			id,
 			karykarmTime,
+			status,
 		}: {
 			id: string
 			karykarmTime: Date
+			status: string
 		} = req.body
 
-		const karykarmObject: KarykarmInterface = {
+		const karykarmObject: any = {
 			id,
 			karykarmTime,
+			status,
 		}
 
 		const karykarm = await followUpInitiate(karykarmObject)
@@ -537,7 +533,6 @@ export const followUpInitiateApi = async (req: Request, res: Response) => {
 }
 export const loginApi = async (req: Request, res: Response) => {
 	try {
-		Logger.info('Inside Login controller')
 		const data: { id: string; password: string } = req.body
 
 		const { error, message } = await loginValidation(data)
@@ -553,8 +548,7 @@ export const loginApi = async (req: Request, res: Response) => {
 				statusCode: 502,
 			})
 		}
-		const correctUser = await verifyPassword(data.password, user.dataValues.password || '')
-		console.log({ correctUser })
+		const correctUser = await verifyPassword(data.password, user.password || '')
 
 		if (!correctUser)
 			return errorHandler({
@@ -562,11 +556,19 @@ export const loginApi = async (req: Request, res: Response) => {
 				err: Messages.INCORRECT_PASSWORD,
 				statusCode: 502,
 			})
+		const response: JWTPayload = {
+			id: user.id,
+			firstname: user.firstname,
+			lastname: user.lastname,
+			email: user.email,
+			userType: user.userType,
+		}
+		const token = await generateToken(response)
 		return responseHandler({
 			res,
 			status: 200,
 			msg: Messages.LOGIN_SUCCESS,
-			data: { user },
+			data: { ...user, token },
 		})
 		// const resData: any = {
 		// 	mobileNumber: user.mobileNumber,
@@ -587,7 +589,6 @@ export const loginApi = async (req: Request, res: Response) => {
 
 // export const verifyLogin = async (req: Request, res: Response) => {
 // 	try {
-// 		Logger.info('Inside Verify login controller')
 // 		const {
 // 			countryCode,
 // 			mobileNumber,
@@ -715,7 +716,6 @@ export const loginApi = async (req: Request, res: Response) => {
 
 export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 	try {
-		Logger.info('inside get user controller')
 		const user = await getAllSamparkVrund({})
 		if (user === null) {
 			return errorHandler({
@@ -758,7 +758,6 @@ export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 
 export const getAllSamparkKarykarAPI = async (req: Request, res: Response) => {
 	try {
-		Logger.info('inside get user controller')
 		const karykarList = await getAllSamparkKarykar({})
 		if (karykarList === null) {
 			return errorHandler({
@@ -776,7 +775,6 @@ export const getAllSamparkKarykarAPI = async (req: Request, res: Response) => {
 
 export const getAllUserAPI = async (req: Request, res: Response) => {
 	try {
-		Logger.info('inside get user controller')
 		const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
 		const userList = await getAllUser(userType, samparkVrund, active)
 		if (userList === null) {
@@ -795,7 +793,6 @@ export const getAllUserAPI = async (req: Request, res: Response) => {
 
 export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 	try {
-		Logger.info('inside get user controller')
 		// const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
 		const karykarmList = await getAllKarykarm()
 		if (karykarmList === null) {
@@ -814,7 +811,6 @@ export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 
 export const getFollowUpListApi = async (req: Request, res: Response) => {
 	try {
-		Logger.info('inside get user controller')
 		const followUpList = await getFollowUpList()
 		if (followUpList === null) {
 			return errorHandler({
@@ -825,6 +821,71 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 		}
 
 		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: followUpList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getAttendanceListApi = async (req: Request, res: Response) => {
+	try {
+		if (!req?.user?.id)
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 501,
+			})
+		const attendanceList = await getAttendanceList(req?.user?.id)
+		if (attendanceList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: attendanceList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getFollowUpDataApi = async (req: Request, res: Response) => {
+	try {
+		const { id = '' } = req.query
+
+		const followUpList = await getFollowUpData({ id })
+		if (followUpList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: followUpList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const updateFollowUpApi = async (req: Request, res: Response) => {
+	try {
+		const data: { id: string; followUp: boolean; coming: boolean; how: string; remark: string } =
+			req.body
+
+		const followUpList = await updateFollowUp(data)
+		if (followUpList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
