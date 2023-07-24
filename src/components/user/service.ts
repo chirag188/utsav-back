@@ -376,7 +376,7 @@ export const getFollowUpList = async (samparkVrund: string | any) => {
 					model: User,
 					as: 'userData',
 					foreignKey: 'userId',
-					attributes: ['mobileNumber', 'email', 'firstname', 'lastname'],
+					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', "profilePic"],
 				},
 				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
 			],
