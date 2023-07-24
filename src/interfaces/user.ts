@@ -21,7 +21,7 @@ export interface UserInterface {
 	sevaIntrest?: string
 	password?: string
 	userType: 'karykar' | 'yuvak' | 'nirikshak' | 'sanchalak'
-	profilePic?: string
+	profilePic?: any
 	DOB?: Date
 	addressLine1?: string
 	gender: string
@@ -82,4 +82,11 @@ export interface FollowUpInterface {
 	coming?: boolean
 	how?: string
 	remark?: string
+	samparkVrund?: string
+}
+
+export interface ImagesInterface {
+	id: string
+	imgName?: string
+	imgValue?: Blob
 }

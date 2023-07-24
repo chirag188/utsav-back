@@ -23,12 +23,12 @@ export const registerRequest = async (data: Object) => {
 		sevaIntrest: Joi.string().required(),
 		password: Joi.string().required(),
 		userType: Joi.string().required().valid('karykar', 'yuvak'),
-		profilePic: Joi.string().required(),
+		profilePic: Joi.string().allow(null, ''),
 		DOB: Joi.date().required(),
 		addressLine1: Joi.string().required(),
 		gender: Joi.string().required(),
 		// username: Joi.string().required(),
-		samparkVrund: Joi.string(),
+		samparkVrund: Joi.string().allow(null, ''),
 	})
 
 	const validate = Schema.validate(data)

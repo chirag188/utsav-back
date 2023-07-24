@@ -13,6 +13,8 @@ interface UserAttributes extends Optional<UserInterface, 'id'> {}
 class User extends Model<UserInterface, UserAttributes> {
 	@Column({ primaryKey: true })
 	id!: string
+	@Column({ unique: true })
+	satsangId!: string
 	// @Column({ unique: true })
 	// username!: string
 	@Column
@@ -51,7 +53,7 @@ class User extends Model<UserInterface, UserAttributes> {
 	seva!: string
 	@Column
 	sevaIntrest!: string
-	@Column({ defaultValue: 'mahant' })
+	@Column({ defaultValue: '1234' })
 	password!: string
 	@Column
 	userType!: string

@@ -13,6 +13,7 @@ import SamparkVrund from '@user/SamparkVrund.model'
 import { Op } from 'sequelize'
 import Karykarm from './karykarm.model'
 import FollowUp from './followUp.model'
+import uploadImageToS3 from '@helpers/uploadFile'
 
 export const createUser = async (payload: UserInterface) => {
 	try {
@@ -27,12 +28,27 @@ export const createUser = async (payload: UserInterface) => {
 	}
 }
 
+export const uploadImage = async (payload: any) => {
+	try {
+		const location = await uploadImageToS3(payload.profilePic, payload.keyname)
+		console.log({ location })
+		return location
+	} catch (error) {
+		return false
+		Logger.error(error)
+	}
+}
+
 export const updateUser = async (payload: UserInterface) => {
 	try {
 		const isExist = await User.findOne({ where: { id: payload.id } })
 		if (!isExist) return false
 		// const user = await User.create(payload)
 		try {
+			// const image = await Images.create({ imgName: payload.id, imgValue: payload.profilePic })
+			// console.log({ image })
+			// const location = await uploadImageToS3(payload.profilePic)
+			// console.log({ location})
 			const user = await User.findOne({
 				where: {
 					email: payload.email,
@@ -317,7 +333,11 @@ export const followUpInitiate = async (payload: any) => {
 					return null
 				})
 			if (payload.status === 'start') {
-				const userList = await User.findAll()
+				const userList = await User.findAll({
+					where: {
+						active: true,
+					},
+				})
 				await Promise.all(
 					userList?.map(
 						async (item) =>
@@ -328,6 +348,7 @@ export const followUpInitiate = async (payload: any) => {
 								userId: item?.dataValues?.id,
 								karykarmId: payload.id,
 								coming: false,
+								samparkVrund: item?.dataValues?.samparkVrund,
 								how: '',
 								remark: '',
 							})
@@ -344,9 +365,12 @@ export const followUpInitiate = async (payload: any) => {
 	}
 }
 
-export const getFollowUpList = async () => {
+export const getFollowUpList = async (samparkVrund: string | any) => {
 	try {
 		const followUpList = await FollowUp.findAndCountAll({
+			where: {
+				...(samparkVrund && { samparkVrund }),
+			},
 			include: [
 				{
 					model: User,
@@ -409,6 +433,21 @@ export const getFollowUpData = async (payload: any) => {
 			return null
 		}
 		return followUpList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
+export const getProfileData = async (payload: any) => {
+	try {
+		const profileData = await User.findOne({
+			where: { id: payload.id },
+		})
+		if (!profileData) {
+			return null
+		}
+		return profileData
 	} catch (err) {
 		Logger.error(err)
 		return null

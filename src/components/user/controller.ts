@@ -24,11 +24,13 @@ import {
 	getAttendanceList,
 	getFollowUpData,
 	getFollowUpList,
+	getProfileData,
 	getUserService,
 	updateFollowUp,
 	updateKarykarm,
 	updateSatsangProfile,
 	updateUser,
+	uploadImage,
 	verifyPassword,
 } from '@user/service'
 import Messages from '@helpers/messages'
@@ -185,6 +187,41 @@ export const createUserApi = async (req: Request, res: Response) => {
 				data: { user },
 			})
 		}
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const uploadImageApi = async (req: Request, res: Response) => {
+	try {
+		const {
+			profilePic,
+			keyname,
+		}: {
+			profilePic: any
+			keyname: any
+		} = req.body
+
+		const fileObject: any = {
+			profilePic,
+			keyname,
+		}
+
+		const location = await uploadImage(fileObject)
+		if (location === false) {
+			return errorHandler({
+				res,
+				statusCode: 409,
+				err: Messages.NOT_EMAIL_EXIST,
+			})
+		}
+		return responseHandler({
+			res,
+			status: 200,
+			msg: Messages.YUVAK_UPDATED_SUCCESS,
+			data: { location },
+		})
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -811,7 +848,8 @@ export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 
 export const getFollowUpListApi = async (req: Request, res: Response) => {
 	try {
-		const followUpList = await getFollowUpList()
+		const { samparkVrund = 'A' } = req.query
+		const followUpList = await getFollowUpList(samparkVrund)
 		if (followUpList === null) {
 			return errorHandler({
 				res,
@@ -865,6 +903,26 @@ export const getFollowUpDataApi = async (req: Request, res: Response) => {
 		}
 
 		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: followUpList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getProfileDataApi = async (req: Request, res: Response) => {
+	try {
+		const { id = '' } = req.query
+
+		const profileData = await getProfileData({ id })
+		if (profileData === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: profileData })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
