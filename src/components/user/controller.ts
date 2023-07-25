@@ -342,8 +342,8 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			vrundName,
 		}
 
-		const karykar1 = await getUserService({ id: karykar1profileId, userType: 'karykar' })
-		const karykar2 = await getUserService({ id: karykar2profileId, userType: 'karykar' })
+		const karykar1 = await getProfileData({ id: karykar1profileId, userType: 'karykar' })
+		const karykar2 = await getProfileData({ id: karykar2profileId, userType: 'karykar' })
 		if (karykar1 === null || karykar2 === null) {
 			return errorHandler({
 				res,
@@ -812,8 +812,33 @@ export const getAllSamparkKarykarAPI = async (req: Request, res: Response) => {
 
 export const getAllUserAPI = async (req: Request, res: Response) => {
 	try {
-		const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
-		const userList = await getAllUser(userType, samparkVrund, active)
+		const {
+			userType = 'yuvak',
+			samparkVrund = 'A',
+			active = true,
+			offset = 0,
+			limit = 10,
+			searchTxt = '',
+			orderBy = 'firstname',
+			orderType = 'DESC',
+		} = req.query
+
+		const strOffset = offset ? offset.toString() : '0'
+		const strLimit = limit ? limit.toString() : '10'
+		const search = searchTxt ? searchTxt.toString() : ''
+		const strorderBy = orderBy ? orderBy.toString() : 'createdAt'
+		const strorderType = orderType ? orderType.toString() : 'DESC'
+
+		const userList = await getAllUser(
+			parseInt(strOffset!),
+			parseInt(strLimit!),
+			search,
+			strorderBy,
+			strorderType,
+			userType,
+			samparkVrund,
+			active
+		)
 		if (userList === null) {
 			return errorHandler({
 				res,
@@ -848,8 +873,29 @@ export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 
 export const getFollowUpListApi = async (req: Request, res: Response) => {
 	try {
-		const { samparkVrund = 'A' } = req.query
-		const followUpList = await getFollowUpList(samparkVrund)
+		const {
+			samparkVrund = 'A',
+			offset = 0,
+			limit = 10,
+			searchTxt = '',
+			orderBy = 'firstname',
+			orderType = 'DESC',
+		} = req.query
+
+		const strOffset = offset ? offset.toString() : '0'
+		const strLimit = limit ? limit.toString() : '10'
+		const search = searchTxt ? searchTxt.toString() : ''
+		const strorderBy = orderBy ? orderBy.toString() : 'createdAt'
+		const strorderType = orderType ? orderType.toString() : 'DESC'
+
+		const followUpList = await getFollowUpList(
+			samparkVrund,
+			parseInt(strOffset!),
+			parseInt(strLimit!),
+			search,
+			strorderBy,
+			strorderType
+		)
 		if (followUpList === null) {
 			return errorHandler({
 				res,

@@ -213,17 +213,47 @@ export const getAllSamparkKarykar = async (filter: Partial<User>) => {
 }
 
 export const getAllUser = async (
+	offset: number,
+	limit: number,
+	searchTxt: string,
+	orderBy: string,
+	orderType: string,
 	userType: string | any,
 	samparkVrund: string | any,
 	active: boolean | any
 ) => {
 	try {
-		const userList = await User.findAndCountAll({
+		let options: any = {
+			offset,
+			limit,
 			where: {
 				...(userType && { userType }),
 				...(samparkVrund && { samparkVrund }),
 				active,
 			},
+			order: [[orderBy, orderType]],
+		}
+		if (searchTxt !== '') {
+			options.where = {
+				...(userType && { userType }),
+				...(samparkVrund && { samparkVrund }),
+				active,
+				[Op.or]: {
+					name: {
+						[Op.iLike]: `%${searchTxt}%`,
+					},
+					email: {
+						[Op.iLike]: `%${searchTxt}%`,
+					},
+					companyName: {
+						[Op.iLike]: `%${searchTxt}%`,
+					},
+				},
+			}
+		}
+
+		const userList = await User.findAndCountAll({
+			...options,
 		})
 		if (!userList) {
 			return null
@@ -365,21 +395,50 @@ export const followUpInitiate = async (payload: any) => {
 	}
 }
 
-export const getFollowUpList = async (samparkVrund: string | any) => {
+export const getFollowUpList = async (
+	samparkVrund: string | any,
+	offset: number,
+	limit: number,
+	searchTxt: string,
+	orderBy: string,
+	orderType: string
+) => {
 	try {
-		const followUpList = await FollowUp.findAndCountAll({
+		let options: any = {
+			offset,
+			limit,
 			where: {
 				...(samparkVrund && { samparkVrund }),
 			},
+			order: [[orderBy, orderType]],
 			include: [
 				{
 					model: User,
 					as: 'userData',
 					foreignKey: 'userId',
-					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', "profilePic"],
+					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', 'profilePic'],
 				},
 				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
 			],
+		}
+		if (searchTxt !== '') {
+			options.where = {
+				...(samparkVrund && { samparkVrund }),
+				[Op.or]: {
+					name: {
+						[Op.iLike]: `%${searchTxt}%`,
+					},
+					email: {
+						[Op.iLike]: `%${searchTxt}%`,
+					},
+					companyName: {
+						[Op.iLike]: `%${searchTxt}%`,
+					},
+				},
+			}
+		}
+		const followUpList = await FollowUp.findAndCountAll({
+			...options,
 		})
 		if (!followUpList) {
 			return null
