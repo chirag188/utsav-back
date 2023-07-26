@@ -53,6 +53,7 @@ export const updateUser = async (payload: UserInterface) => {
 				where: {
 					email: payload.email,
 				},
+				attributes: { exclude: ['password'] },
 			})
 				.then((result) => {
 					result!.update(
@@ -154,7 +155,11 @@ export const createSamparkVrund = async (payload: SamparkVrundInterface) => {
 
 export const getUserService = async (filter: Partial<UserInterface>) => {
 	try {
-		const user = await User.findOne({ where: filter, raw: true })
+		const user = await User.findOne({
+			where: filter,
+			raw: true,
+			attributes: { exclude: ['password'] },
+		})
 		if (!user) {
 			return null
 		}
@@ -201,6 +206,7 @@ export const getAllSamparkKarykar = async (filter: Partial<User>) => {
 			where: {
 				userType: 'karykar',
 			},
+			attributes: { exclude: ['password'] },
 		})
 		if (!karykarList) {
 			return null
@@ -231,6 +237,7 @@ export const getAllUser = async (
 				...(samparkVrund && { samparkVrund }),
 				active,
 			},
+			attributes: { exclude: ['password'] },
 			order: [[orderBy, orderType]],
 		}
 		if (searchTxt !== '') {
@@ -254,6 +261,7 @@ export const getAllUser = async (
 
 		const userList = await User.findAndCountAll({
 			...options,
+			attributes: { exclude: ['password'] },
 		})
 		if (!userList) {
 			return null
@@ -502,6 +510,7 @@ export const getProfileData = async (payload: any) => {
 	try {
 		const profileData = await User.findOne({
 			where: { id: payload.id },
+			attributes: { exclude: ['password'] },
 		})
 		if (!profileData) {
 			return null
