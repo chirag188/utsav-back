@@ -596,6 +596,8 @@ export const loginApi = async (req: Request, res: Response) => {
 		}
 		// const password = await hash(data.password, 9)
 
+		console.log({ data: data.password, user: user.password })
+
 		const correctUser = data.password === user.password
 
 		if (!correctUser)
