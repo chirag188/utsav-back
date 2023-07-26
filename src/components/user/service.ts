@@ -455,12 +455,12 @@ export const getAttendanceList = async (userId: string) => {
 		const followUpList = await FollowUp.findAndCountAll({
 			where: { userId },
 			include: [
-				// {
-				// 	model: User,
-				// 	as: 'userData',
-				// 	foreignKey: 'userId',
-				// 	attributes: ['mobileNumber', 'email', 'firstname', 'lastname'],
-				// },
+				{
+					model: User,
+					as: 'userData',
+					foreignKey: 'userId',
+					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', 'appId'],
+				},
 				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
 			],
 		})

@@ -1,5 +1,6 @@
 export interface UserInterface {
 	id: string
+	appId?: string
 	// username?: string
 	firstname: string
 	middlename?: string

@@ -63,6 +63,8 @@ export const createUserApi = async (req: Request, res: Response) => {
 			addressLine1,
 			gender,
 			id,
+			app,
+			appId,
 			samparkVrund,
 		}: {
 			// username: string
@@ -88,6 +90,8 @@ export const createUserApi = async (req: Request, res: Response) => {
 			addressLine1: string
 			gender: string
 			id: string
+			app: boolean
+			appId: string
 			samparkVrund: string
 		} = req.body
 
@@ -105,10 +109,12 @@ export const createUserApi = async (req: Request, res: Response) => {
 			socName,
 			nearBy,
 			area,
+			app,
+			appId,
 			married,
 			education,
 			mandal,
-			email: email ? email : `${firstname}@yopmail.com`,
+			email: email ? email : `${firstname}@gmail.com`,
 			seva,
 			sevaIntrest,
 			password,
@@ -826,7 +832,7 @@ export const getAllUserAPI = async (req: Request, res: Response) => {
 		const strOffset = offset ? offset.toString() : '0'
 		const strLimit = limit ? limit.toString() : '10'
 		const search = searchTxt ? searchTxt.toString() : ''
-		const strorderBy = orderBy ? orderBy.toString() : 'createdAt'
+		const strorderBy = orderBy ? orderBy.toString() : 'orderBy'
 		const strorderType = orderType ? orderType.toString() : 'DESC'
 
 		const userList = await getAllUser(

@@ -39,6 +39,8 @@ class User extends Model<UserInterface, UserAttributes> {
 	married!: boolean
 	@Column({ defaultValue: false })
 	app!: boolean
+	@Column({ defaultValue: ''})
+	appId!: string
 	@Column({ defaultValue: true })
 	active!: boolean
 	@Column
