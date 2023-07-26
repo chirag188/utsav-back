@@ -245,13 +245,13 @@ export const getAllUser = async (
 				...(samparkVrund && { samparkVrund }),
 				active,
 				[Op.or]: {
-					name: {
+					firstname: {
+						[Op.iLike]: `%${searchTxt}%`,
+					},
+					lastname: {
 						[Op.iLike]: `%${searchTxt}%`,
 					},
 					email: {
-						[Op.iLike]: `%${searchTxt}%`,
-					},
-					companyName: {
 						[Op.iLike]: `%${searchTxt}%`,
 					},
 				},
@@ -424,6 +424,19 @@ export const getFollowUpList = async (
 					as: 'userData',
 					foreignKey: 'userId',
 					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', 'profilePic'],
+					where: {
+						[Op.or]: {
+							firstname: {
+								[Op.iLike]: `%${searchTxt}%`,
+							},
+							email: {
+								[Op.iLike]: `%${searchTxt}%`,
+							},
+							lastname: {
+								[Op.iLike]: `%${searchTxt}%`,
+							},
+						},
+					},
 				},
 				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
 			],
@@ -431,17 +444,6 @@ export const getFollowUpList = async (
 		if (searchTxt !== '') {
 			options.where = {
 				...(samparkVrund && { samparkVrund }),
-				[Op.or]: {
-					name: {
-						[Op.iLike]: `%${searchTxt}%`,
-					},
-					email: {
-						[Op.iLike]: `%${searchTxt}%`,
-					},
-					companyName: {
-						[Op.iLike]: `%${searchTxt}%`,
-					},
-				},
 			}
 		}
 		const followUpList = await FollowUp.findAndCountAll({
