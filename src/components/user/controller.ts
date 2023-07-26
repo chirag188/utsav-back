@@ -132,6 +132,8 @@ export const createUserApi = async (req: Request, res: Response) => {
 			return errorHandler({ res, err: validator.message })
 		}
 
+		console.log({ password })
+
 		userObject.password = await hash(password, 10)
 
 		if (id) {
@@ -153,6 +155,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			userObject.id = id
 				? id
 				: `${firstname.toLowerCase()}${Math.floor(Math.random() * (999 - 100 + 1) + 100)}`
+			console.log({ password, userObject })
 			const user = await createUser(userObject)
 			if (user === false) {
 				return errorHandler({
