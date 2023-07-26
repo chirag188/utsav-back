@@ -10,7 +10,7 @@ import { Request, Response } from 'express'
 import { Logger } from '@config/logger'
 import { loginValidation, registerRequest, satsangProfileRequest } from '@user/validator'
 import { errorHandler, responseHandler } from '@helpers/responseHandlers'
-// import { hash } from 'bcrypt'
+import { hash } from 'bcrypt'
 import {
 	createKarykarm,
 	createSamparkVrund,
@@ -134,7 +134,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 
 		console.log({ password })
 
-		// userObject.password = await hash(password, 9)
+		userObject.password = await hash(password, 10)
 
 		if (id) {
 			const user = await updateUser(userObject)
@@ -594,11 +594,7 @@ export const loginApi = async (req: Request, res: Response) => {
 				statusCode: 502,
 			})
 		}
-		// const password = await hash(data.password, 9)
-
-		console.log({ data: data.password, user: user.password })
-
-		const correctUser = data.password === user.password
+		const correctUser = await verifyPassword(data.password, user.password || '')
 
 		if (!correctUser)
 			return errorHandler({

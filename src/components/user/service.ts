@@ -158,7 +158,6 @@ export const getUserService = async (filter: Partial<UserInterface>) => {
 		const user = await User.findOne({
 			where: filter,
 			raw: true,
-			attributes: { exclude: ['password'] },
 		})
 		if (!user) {
 			return null
