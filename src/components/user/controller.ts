@@ -134,7 +134,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 
 		console.log({ password })
 
-		userObject.password = await hash(password, 10)
+		userObject.password = await hash(password, 9)
 
 		if (id) {
 			const user = await updateUser(userObject)
@@ -594,7 +594,9 @@ export const loginApi = async (req: Request, res: Response) => {
 				statusCode: 502,
 			})
 		}
-		const correctUser = await verifyPassword(data.password, user.password || '')
+		const password = await hash(data.password, 9)
+
+		const correctUser = password === user.password
 
 		if (!correctUser)
 			return errorHandler({
