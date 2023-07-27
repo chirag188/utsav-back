@@ -21,13 +21,14 @@ export interface UserInterface {
 	seva?: string
 	sevaIntrest?: string
 	password?: string
-	userType: 'karykar' | 'yuvak' | 'nirikshak' | 'sanchalak'
+	userType: 'karykar' | 'yuvak' | 'admin' | 'nirikshak' | 'sanchalak'
 	profilePic?: any
 	DOB?: Date
-	addressLine1?: string
 	gender: string
 	samparkVrund?: string
 	token?: string
+	job?: string
+	business?: string
 }
 
 export interface satsangProfileInterface {

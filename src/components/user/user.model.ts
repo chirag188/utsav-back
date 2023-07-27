@@ -39,7 +39,11 @@ class User extends Model<UserInterface, UserAttributes> {
 	married!: boolean
 	@Column({ defaultValue: false })
 	app!: boolean
-	@Column({ defaultValue: ''})
+	@Column({ defaultValue: '' })
+	job!: string
+	@Column({ defaultValue: '' })
+	business!: string
+	@Column({ defaultValue: '' })
 	appId!: string
 	@Column({ defaultValue: true })
 	active!: boolean
@@ -51,9 +55,9 @@ class User extends Model<UserInterface, UserAttributes> {
 	mandal!: string
 	@Column({ unique: true })
 	email!: string
-	@Column
+	@Column({ defaultValue: '' })
 	seva!: string
-	@Column
+	@Column({ defaultValue: '' })
 	sevaIntrest!: string
 	@Column({ defaultValue: '1234' })
 	password!: string
@@ -67,8 +71,6 @@ class User extends Model<UserInterface, UserAttributes> {
 	profilePic!: string
 	@Column({ type: DataType.DATEONLY })
 	DOB!: Date
-	@Column
-	addressLine1!: string
 	@Column({ defaultValue: 'male' })
 	gender!: string
 

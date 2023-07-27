@@ -176,6 +176,7 @@ export const getAllSamparkVrund = async (filter: Partial<SamparkVrundInterface>)
 				{ model: User, as: 'karykar1profile', foreignKey: 'karykar1profileId' },
 				{ model: User, as: 'karykar2profile', foreignKey: 'karykar2profileId' },
 			],
+			order: [["vrundName", "ASC"]],
 		})
 		if (!user) {
 			return null

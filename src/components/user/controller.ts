@@ -60,12 +60,13 @@ export const createUserApi = async (req: Request, res: Response) => {
 			userType,
 			profilePic,
 			DOB,
-			addressLine1,
 			gender,
 			id,
 			app,
 			appId,
 			samparkVrund,
+			job,
+			business
 		}: {
 			// username: string
 			firstname: string
@@ -87,12 +88,13 @@ export const createUserApi = async (req: Request, res: Response) => {
 			userType: string
 			profilePic: string
 			DOB: Date
-			addressLine1: string
 			gender: string
 			id: string
 			app: boolean
 			appId: string
 			samparkVrund: string
+			job: string
+			business: string
 		} = req.body
 
 		const userObject: UserInterface = {
@@ -118,12 +120,13 @@ export const createUserApi = async (req: Request, res: Response) => {
 			seva,
 			sevaIntrest,
 			password,
-			userType: userType === 'karykar' ? 'karykar' : 'yuvak',
+			userType: userType === 'karykar' || userType === 'admin' ? userType : 'yuvak',
 			profilePic,
 			DOB,
-			addressLine1,
 			gender,
 			samparkVrund,
+			job,
+			business
 		}
 
 		const validator = await registerRequest(userObject)
@@ -131,8 +134,6 @@ export const createUserApi = async (req: Request, res: Response) => {
 		if (validator.error) {
 			return errorHandler({ res, err: validator.message })
 		}
-
-		console.log({ password })
 
 		userObject.password = await hash(password, 10)
 
@@ -155,7 +156,6 @@ export const createUserApi = async (req: Request, res: Response) => {
 			userObject.id = id
 				? id
 				: `${firstname.toLowerCase()}${Math.floor(Math.random() * (999 - 100 + 1) + 100)}`
-			console.log({ password, userObject })
 			const user = await createUser(userObject)
 			if (user === false) {
 				return errorHandler({
@@ -446,7 +446,7 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 			mobileUser,
 			email,
 			socName,
-			userType: userType === 'karykar' ? 'karykar' : 'yuvak',
+			userType: userType === 'karykar' || userType === 'admin' ? userType : 'yuvak',
 			gender: 'male',
 			samparkVrund,
 		}
