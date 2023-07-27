@@ -439,6 +439,8 @@ export const followUpInitiate = async (payload: any) => {
 
 export const getFollowUpList = async (
 	samparkVrund: string | any,
+	followUp: string,
+	coming: string,
 	offset: number,
 	limit: number,
 	searchTxt: string,
@@ -451,6 +453,8 @@ export const getFollowUpList = async (
 			limit,
 			where: {
 				...(samparkVrund && { samparkVrund }),
+				...(coming && { coming: coming === 'true' }),
+				...(followUp && { followUp: followUp === 'true' }),
 			},
 			order: [[orderBy, orderType]],
 			include: [

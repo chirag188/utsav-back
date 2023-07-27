@@ -863,6 +863,8 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 	try {
 		const {
 			samparkVrund = 'A',
+			coming = '',
+			followUp = '',
 			offset = 0,
 			limit = 10,
 			searchTxt = '',
@@ -875,9 +877,13 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 		const search = searchTxt ? searchTxt.toString() : ''
 		const strorderBy = orderBy ? orderBy.toString() : 'createdAt'
 		const strorderType = orderType ? orderType.toString() : 'DESC'
+		const strorfollowUp = followUp ? followUp.toString() : ''
+		const strorcoming = coming ? coming.toString() : ''
 
 		const followUpList = await getFollowUpList(
 			samparkVrund,
+			strorfollowUp,
+			strorcoming,
 			parseInt(strOffset!),
 			parseInt(strLimit!),
 			search,
