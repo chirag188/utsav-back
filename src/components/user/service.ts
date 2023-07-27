@@ -31,7 +31,6 @@ export const createUser = async (payload: UserInterface) => {
 export const uploadImage = async (payload: any) => {
 	try {
 		const location = await uploadImageToS3(payload.profilePic, payload.keyname)
-		console.log({ location })
 		return location
 	} catch (error) {
 		return false
@@ -46,9 +45,7 @@ export const updateUser = async (payload: UserInterface) => {
 		// const user = await User.create(payload)
 		try {
 			// const image = await Images.create({ imgName: payload.id, imgValue: payload.profilePic })
-			// console.log({ image })
 			// const location = await uploadImageToS3(payload.profilePic)
-			// console.log({ location})
 			const user = await User.findOne({
 				where: {
 					email: payload.email,
@@ -63,6 +60,43 @@ export const updateUser = async (payload: UserInterface) => {
 						{
 							where: {
 								email: payload.email,
+							},
+						}
+					)
+				})
+				.catch((error) => {
+					Logger.error(error)
+					return null
+				})
+			return user
+		} catch (error) {
+			Logger.error(error)
+		}
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const assignSamparkKarykar = async (payload: UserInterface) => {
+	try {
+		const isExist = await User.findOne({ where: { appId: payload.id } })
+		if (!isExist) return false
+		try {
+			const user = await User.findOne({
+				where: {
+					appId: payload.id,
+				},
+				attributes: { exclude: ['password'] },
+			})
+				.then((result) => {
+					result!.update(
+						{
+							samparkVrund: payload.samparkVrund,
+						},
+						{
+							where: {
+								appId: payload.id,
 							},
 						}
 					)
@@ -176,7 +210,7 @@ export const getAllSamparkVrund = async (filter: Partial<SamparkVrundInterface>)
 				{ model: User, as: 'karykar1profile', foreignKey: 'karykar1profileId' },
 				{ model: User, as: 'karykar2profile', foreignKey: 'karykar2profileId' },
 			],
-			order: [["vrundName", "ASC"]],
+			order: [['vrundName', 'ASC']],
 		})
 		if (!user) {
 			return null

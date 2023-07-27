@@ -12,6 +12,7 @@ import { loginValidation, registerRequest, satsangProfileRequest } from '@user/v
 import { errorHandler, responseHandler } from '@helpers/responseHandlers'
 import { hash } from 'bcrypt'
 import {
+	assignSamparkKarykar,
 	createKarykarm,
 	createSamparkVrund,
 	createSatsangProfile,
@@ -66,7 +67,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			appId,
 			samparkVrund,
 			job,
-			business
+			business,
 		}: {
 			// username: string
 			firstname: string
@@ -126,7 +127,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			gender,
 			samparkVrund,
 			job,
-			business
+			business,
 		}
 
 		const validator = await registerRequest(userObject)
@@ -417,42 +418,20 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 	try {
 		const {
-			firstname,
-			lastname,
-			mobileNumber,
-			mobileUser,
-			email,
-			socName,
-			userType,
 			id,
 			samparkVrund,
 		}: {
-			firstname: string
-			lastname: string
-			mobileNumber: number
-			mobileUser: string
-			email: string
-			socName: string
-			userType: string
 			id: string
 			samparkVrund: string
 		} = req.body
 
-		const userObject: UserInterface = {
-			id: id ? id : uuid(),
-			firstname,
-			lastname,
-			mobileNumber,
-			mobileUser,
-			email,
-			socName,
-			userType: userType === 'karykar' || userType === 'admin' ? userType : 'yuvak',
-			gender: 'male',
+		const userObject: any = {
+			id,
 			samparkVrund,
 		}
 
 		if (id) {
-			const user = await updateUser(userObject)
+			const user = await assignSamparkKarykar(userObject)
 			if (user === false) {
 				return errorHandler({
 					res,
