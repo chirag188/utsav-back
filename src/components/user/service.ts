@@ -80,23 +80,27 @@ export const updateUser = async (payload: UserInterface) => {
 
 export const assignSamparkKarykar = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { appId: payload.id } })
+		const isExist = await User.findOne({ where: { mobileNumber: payload.id } })
 		if (!isExist) return false
 		try {
 			const user = await User.findOne({
 				where: {
-					appId: payload.id,
+					mobileNumber: payload.id,
 				},
 				attributes: { exclude: ['password'] },
 			})
 				.then((result) => {
 					result!.update(
 						{
-							samparkVrund: payload.samparkVrund,
+							// samparkVrund: payload.samparkVrund,
+							houseNumber: payload.houseNumber,
+							socName: payload.socName,
+							nearBy: payload.nearBy,
+							area: payload.area,
 						},
 						{
 							where: {
-								appId: payload.id,
+								mobileNumber: payload.id,
 							},
 						}
 					)

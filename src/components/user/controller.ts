@@ -117,7 +117,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			married,
 			education,
 			mandal,
-			email: email ? email : `${firstname}@gmail.com`,
+			email: email ? email : `${firstname}${lastname}@gmail.com`,
 			seva,
 			sevaIntrest,
 			password,
@@ -419,15 +419,27 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 	try {
 		const {
 			id,
-			samparkVrund,
+			// samparkVrund,
+			houseNumber,
+			socName,
+			nearBy,
+			area,
 		}: {
 			id: string
-			samparkVrund: string
+			// samparkVrund: string
+			houseNumber: string,
+			socName: string,
+			nearBy: string,
+			area: string,
 		} = req.body
 
 		const userObject: any = {
 			id,
-			samparkVrund,
+			// samparkVrund,
+			houseNumber,
+			socName,
+			nearBy,
+			area,
 		}
 
 		if (id) {
