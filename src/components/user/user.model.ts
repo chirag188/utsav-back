@@ -48,7 +48,7 @@ class User extends Model<UserInterface, UserAttributes> {
 	@Column({ defaultValue: true })
 	active!: boolean
 	@Column
-	activeReason!: string
+	deleteReason!: string
 	@Column
 	education!: string
 	@Column({ defaultValue: 'UTSAV' })

@@ -5,6 +5,7 @@ import {
 	createSamparkVrundApi,
 	createSatsangProfileApi,
 	createUserApi,
+	deleteUserApi,
 	followUpInitiateApi,
 	getAllKarykarmAPI,
 	getAllSamparkKarykarAPI,
@@ -31,6 +32,7 @@ router.put('/updateSatsangProfile', createSatsangProfileApi)
 router.post('/createSamparkVrund', createSamparkVrundApi)
 router.get('/getAllSamparkVrund', getAllSamparkVrundAPI)
 router.put('/assignSamparkKarykar', assignSamparkKarykarApi)
+router.put('/deleteUser', deleteUserApi)
 router.post('/createKarykarm', createKarykarmApi)
 router.put('/followUpInitiate', followUpInitiateApi)
 router.get('/getfollowUpList', getFollowUpListApi)

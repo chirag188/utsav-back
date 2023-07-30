@@ -40,7 +40,7 @@ export const uploadImage = async (payload: any) => {
 
 export const updateUser = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { id: payload.id } })
+		const isExist = await User.findOne({ where: { id: payload.id, active: true } })
 		if (!isExist) return false
 		// const user = await User.create(payload)
 		try {
@@ -49,6 +49,7 @@ export const updateUser = async (payload: UserInterface) => {
 			const user = await User.findOne({
 				where: {
 					email: payload.email,
+					active: true,
 				},
 				attributes: { exclude: ['password'] },
 			})
@@ -80,12 +81,13 @@ export const updateUser = async (payload: UserInterface) => {
 
 export const assignSamparkKarykar = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { mobileNumber: payload.id } })
+		const isExist = await User.findOne({ where: { mobileNumber: payload.id, active: true } })
 		if (!isExist) return false
 		try {
 			const user = await User.findOne({
 				where: {
 					mobileNumber: payload.id,
+					active: true,
 				},
 				attributes: { exclude: ['password'] },
 			})
@@ -101,6 +103,45 @@ export const assignSamparkKarykar = async (payload: UserInterface) => {
 						{
 							where: {
 								mobileNumber: payload.id,
+							},
+						}
+					)
+				})
+				.catch((error) => {
+					Logger.error(error)
+					return null
+				})
+			return user
+		} catch (error) {
+			Logger.error(error)
+		}
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const deleteUser = async (payload: UserInterface) => {
+	try {
+		const isExist = await User.findOne({ where: { id: payload.id, active: true } })
+		if (!isExist) return false
+		try {
+			const user = await User.findOne({
+				where: {
+					id: payload.id,
+					active: true,
+				},
+				attributes: { exclude: ['password'] },
+			})
+				.then((result) => {
+					result!.update(
+						{
+							active: false,
+							deleteReason: payload.deleteReason,
+						},
+						{
+							where: {
+								id: payload.id,
 							},
 						}
 					)
@@ -553,7 +594,7 @@ export const getFollowUpData = async (payload: any) => {
 export const getProfileData = async (payload: any) => {
 	try {
 		const profileData = await User.findOne({
-			where: { id: payload.id },
+			where: { id: payload.id, active: true },
 			attributes: { exclude: ['password'] },
 		})
 		if (!profileData) {
@@ -607,7 +648,7 @@ export const updateFollowUp = async (payload: any) => {
 
 export const login = async (filter: Partial<UserInterface>) => {
 	try {
-		const user = await User.findOne({ where: filter })
+		const user = await User.findOne({ where: { ...filter, active: true } })
 		if (!user) {
 			return null
 		}

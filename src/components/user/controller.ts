@@ -17,6 +17,7 @@ import {
 	createSamparkVrund,
 	createSatsangProfile,
 	createUser,
+	deleteUser,
 	followUpInitiate,
 	getAllKarykarm,
 	getAllSamparkKarykar,
@@ -427,10 +428,10 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 		}: {
 			id: string
 			// samparkVrund: string
-			houseNumber: string,
-			socName: string,
-			nearBy: string,
-			area: string,
+			houseNumber: string
+			socName: string
+			nearBy: string
+			area: string
 		} = req.body
 
 		const userObject: any = {
@@ -444,6 +445,43 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 
 		if (id) {
 			const user = await assignSamparkKarykar(userObject)
+			if (user === false) {
+				return errorHandler({
+					res,
+					statusCode: 409,
+					err: Messages.NOT_EMAIL_EXIST,
+				})
+			}
+			return responseHandler({
+				res,
+				status: 200,
+				msg: Messages.YUVAK_UPDATED_SUCCESS,
+				data: { user },
+			})
+		}
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const deleteUserApi = async (req: Request, res: Response) => {
+	try {
+		const {
+			id,
+			deleteReason,
+		}: {
+			id: string
+			deleteReason: string
+		} = req.body
+
+		const userObject: any = {
+			id,
+			deleteReason,
+		}
+
+		if (id) {
+			const user = await deleteUser(userObject)
 			if (user === false) {
 				return errorHandler({
 					res,

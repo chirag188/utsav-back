@@ -14,7 +14,7 @@ export interface UserInterface {
 	married?: boolean
 	app?: boolean
 	active?: boolean
-	activeReason?: string
+	deleteReason?: string
 	education?: string
 	mandal?: string
 	email?: string
