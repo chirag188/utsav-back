@@ -15,7 +15,8 @@ const _host: string = Config.DB.DB_HOST!
 const _port: string = Config.DB.DB_PORT!
 
 const db = new Sequelize(
-	'postgres://dbutsav_4wyc_user:rlCCMLsGtb8Ks7DLPmFysijcGZO0YfHd@dpg-ci23bajhp8u1a18hb67g-a/dbutsav_4wyc?sslmode=no-verify',
+	'postgres://utsavdb_user:8XQUBGVqn3RNXbK4jvoVphttQUoy7KRJ@dpg-cjvlqpvhdsdc738c0rjg-a/utsavdb?sslmode=no-verify',
+	// 'postgres://utsavdb_user:8XQUBGVqn3RNXbK4jvoVphttQUoy7KRJ@dpg-cjvlqpvhdsdc738c0rjg-a.oregon-postgres.render.com/utsavdb?sslmode=no-verify',
 	{
 		storage: ':memory:',
 		logging: (msg) => Logger.info(msg),
@@ -38,6 +39,6 @@ const db = new Sequelize(
 			],
 		},
 	}
-) // Example for postgres
+)
 
 export default db

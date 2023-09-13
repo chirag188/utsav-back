@@ -13,8 +13,6 @@ interface UserAttributes extends Optional<UserInterface, 'id'> {}
 class User extends Model<UserInterface, UserAttributes> {
 	@Column({ primaryKey: true })
 	id!: string
-	@Column({ unique: true })
-	satsangId!: string
 	// @Column({ unique: true })
 	// username!: string
 	@Column
@@ -73,6 +71,22 @@ class User extends Model<UserInterface, UserAttributes> {
 	DOB!: Date
 	@Column({ defaultValue: 'male' })
 	gender!: string
+	@Column
+	occupation!: string
+	@Column
+	occupationFiled!: string
+	@Column
+	fatherOccupation!: string
+	@Column
+	fatherOccupationFiled!: string
+	@Column({ type: DataType.BIGINT })
+	fatherMobileNumber!: number
+	@Column
+	district!: string
+	@Column
+	taluka!: string
+	@Column
+	village!: string
 
 	// @HasOne(() => SatsangProfile, { onDelete: 'SET NULL' })
 	// satsangProfile!: SatsangProfile
