@@ -12,41 +12,41 @@ class SatsangProfile extends Model<satsangProfileInterface, SatsangProfileAttrib
 	@ForeignKey(() => User)
 	@Column({ primaryKey: true })
 	userId!: string
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	nityaPuja!: boolean
 	@Column
 	nityaPujaYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	tilakChandlo!: boolean
 	@Column
 	tilakChandloYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	satsangi!: boolean
 	@Column
 	satsangiYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	athvadikSabha!: boolean
 	@Column
 	athvadikSabhaYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	raviSabha!: boolean
 	@Column
 	raviSabhaYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	gharSatsang!: boolean
 	@Column
 	gharSatsangYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	ssp!: boolean
 	@Column
 	sspStage!: string
 	@Column
 	sspYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	ekadashi!: boolean
 	@Column
 	ekadashiYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	niymitVanchan!: boolean
 	@Column
 	niymitVanchanYear!: number
