@@ -28,8 +28,10 @@ class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	followUpId!: number
 	@Column
 	followUp!: boolean
-	@Column
+	@Column({ defaultValue: false })
 	attendance!: boolean
+	@Column({ defaultValue: false })
+	appattendance!: boolean
 	@ForeignKey(() => User)
 	@Column
 	userId!: string

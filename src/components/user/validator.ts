@@ -23,7 +23,7 @@ export const registerRequest = async (data: Object) => {
 		email: Joi.string().required(),
 		seva: Joi.string().allow(null, ''),
 		sevaIntrest: Joi.string().allow(null, ''),
-		password: Joi.string().required(),
+		password: Joi.string().allow(null, ''),
 		userType: Joi.string().required().valid('karykar', 'yuvak', 'admin'),
 		profilePic: Joi.string().allow(null, ''),
 		job: Joi.string().allow(null, ''),
@@ -32,6 +32,14 @@ export const registerRequest = async (data: Object) => {
 		gender: Joi.string().required(),
 		// username: Joi.string().required(),
 		samparkVrund: Joi.string().allow(null, ''),
+		occupation: Joi.string().allow(null, ''),
+		occupationFiled: Joi.string().allow(null, ''),
+		fatherOccupation: Joi.string().allow(null, ''),
+		fatherOccupationFiled: Joi.string().allow(null, ''),
+		fatherMobileNumber: Joi.number().allow(null, ''),
+		district: Joi.string().allow(null, ''),
+		taluka: Joi.string().allow(null, ''),
+		village: Joi.string().allow(null, ''),
 	})
 
 	const validate = Schema.validate(data)
@@ -47,13 +55,11 @@ export const registerRequest = async (data: Object) => {
 	return { error, message }
 }
 
-export const satsangProfileRequest = async (data: { id: string; userId: string }) => {
+export const satsangProfileRequest = async (data: { userId: string }) => {
 	Logger.info('Inside  register request validator')
 
 	const Schema = Joi.object({
-		id: Joi.string().required(),
 		userId: Joi.string().required(),
-		// yuvakProfile: Joi.string(),
 		// nityaPuja: Joi.boolean(),
 		// nityaPujaYear: Joi.number(),
 		// tilakChandlo: Joi.boolean(),

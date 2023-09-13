@@ -30,7 +30,7 @@ class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> 
 	@ForeignKey(() => User)
 	@Column
 	karykar2profileId!: string
-	@Column
+	@Column({ unique: true })
 	vrundName!: string
 	@Column({ type: DataType.ARRAY(DataType.STRING) })
 	socs!: string[]

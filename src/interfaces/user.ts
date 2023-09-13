@@ -21,7 +21,7 @@ export interface UserInterface {
 	seva?: string
 	sevaIntrest?: string
 	password?: string
-	userType: 'karykar' | 'yuvak' | 'admin' | 'nirikshak' | 'sanchalak'
+	userType: 'karykar' | 'yuvak' | 'admin' | 'superAdmin' | 'nirikshak' | 'sanchalak'
 	profilePic?: any
 	DOB?: Date
 	gender: string
@@ -29,11 +29,17 @@ export interface UserInterface {
 	token?: string
 	job?: string
 	business?: string
+	occupation?: string
+	occupationFiled?: string
+	fatherOccupation?: string
+	fatherOccupationFiled?: string
+	fatherMobileNumber?: number
+	district?: string
+	taluka?: string
+	village?: string
 }
 
 export interface satsangProfileInterface {
-	id: string
-	yuvakProfile?: string
 	nityaPuja?: boolean
 	nityaPujaYear?: number
 	tilakChandlo?: boolean
@@ -48,6 +54,7 @@ export interface satsangProfileInterface {
 	gharSatsangYear?: number
 	ssp?: boolean
 	sspStage?: string
+	sspYear?: number
 	ekadashi?: boolean
 	ekadashiYear?: number
 	niymitVanchan?: boolean
@@ -58,7 +65,7 @@ export interface satsangProfileInterface {
 export interface SamparkVrundInterface {
 	id?: number
 	karykar1profileId: string
-	karykar2profileId?: string
+	karykar2profileId?: string | any
 	vrundName: string
 	socs?: string[]
 }
@@ -79,6 +86,7 @@ export interface FollowUpInterface {
 	followUpId?: number
 	followUp?: boolean
 	attendance?: boolean
+	appattendance?: boolean
 	userId?: string
 	karykarmId?: string
 	coming?: boolean

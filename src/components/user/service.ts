@@ -94,11 +94,11 @@ export const assignSamparkKarykar = async (payload: UserInterface) => {
 				.then((result) => {
 					result!.update(
 						{
-							// samparkVrund: payload.samparkVrund,
-							houseNumber: payload.houseNumber,
-							socName: payload.socName,
-							nearBy: payload.nearBy,
-							area: payload.area,
+							samparkVrund: payload.samparkVrund,
+							// houseNumber: payload.houseNumber,
+							// socName: payload.socName,
+							// nearBy: payload.nearBy,
+							// area: payload.area,
 						},
 						{
 							where: {
@@ -210,10 +210,14 @@ export const createSamparkVrund = async (payload: SamparkVrundInterface) => {
 						karykar1profileId: payload.karykar1profileId,
 					},
 					{
-						karykar2profileId: payload.karykar2profileId,
+						...(payload.karykar2profileId && {
+							karykar2profileId: payload.karykar2profileId,
+						}),
 					},
 					{
-						karykar1profileId: payload.karykar2profileId,
+						...(payload.karykar2profileId && {
+							karykar1profileId: payload.karykar2profileId,
+						}),
 					},
 					{
 						karykar2profileId: payload.karykar1profileId,
@@ -310,10 +314,10 @@ export const getAllUser = async (
 	try {
 		let options: any = {
 			offset,
-			limit,
+			...(limit !== 30 && { limit }),
 			where: {
 				...(userType && { userType }),
-				...(samparkVrund && { samparkVrund }),
+				...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
 				active,
 			},
 			attributes: { exclude: ['password'] },
@@ -322,7 +326,7 @@ export const getAllUser = async (
 		if (searchTxt !== '') {
 			options.where = {
 				...(userType && { userType }),
-				...(samparkVrund && { samparkVrund }),
+				...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
 				active,
 				[Op.or]: {
 					firstname: {
@@ -359,6 +363,7 @@ export const getAllKarykarm = async () =>
 	{
 		try {
 			const karykarmList = await Karykarm.findAndCountAll({
+				order: [['createdAt', 'DESC']],
 				// where: {
 				// 	...(userType && { userType }),
 				// 	...(samparkVrund && { samparkVrund }),
@@ -381,6 +386,19 @@ export const createKarykarm = async (payload: KarykarmInterface) => {
 		if (isExist) return false
 		const karykarm = await Karykarm.create(payload)
 		return karykarm
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const deleteKarykarm = async (id: string) => {
+	try {
+		const isExist = await Karykarm.findOne({ where: { id } })
+		if (!isExist) return false
+		await FollowUp.destroy({ where: { karykarmId: id } })
+		await Karykarm.destroy({ where: { id } })
+		return true
 	} catch (error) {
 		Logger.error(error)
 		throw error
@@ -462,6 +480,7 @@ export const followUpInitiate = async (payload: any) => {
 								id: uuid(),
 								followUp: false,
 								attendance: false,
+								appattendance: false,
 								userId: item?.dataValues?.id,
 								karykarmId: payload.id,
 								coming: false,
@@ -483,22 +502,31 @@ export const followUpInitiate = async (payload: any) => {
 }
 
 export const getFollowUpList = async (
+	userType: string | any,
 	samparkVrund: string | any,
 	followUp: string,
 	coming: string,
+	attendance: string,
+	appattendance: string,
+	appId: string,
 	offset: number,
 	limit: number,
 	searchTxt: string,
 	orderBy: string,
-	orderType: string
+	orderType: string,
+	karykarmId: string,
+	followUpStart: string
 ) => {
 	try {
 		let options: any = {
 			offset,
 			limit,
 			where: {
-				...(samparkVrund && { samparkVrund }),
+				// ...(userType && { userType }),
+				// ...(samparkVrund && { samparkVrund }),
 				...(coming && { coming: coming === 'true' }),
+				...(attendance && { attendance: attendance === 'true' }),
+				...(appattendance && { appattendance: appattendance === 'true' }),
 				...(followUp && { followUp: followUp === 'true' }),
 			},
 			order: [[orderBy, orderType]],
@@ -507,8 +535,28 @@ export const getFollowUpList = async (
 					model: User,
 					as: 'userData',
 					foreignKey: 'userId',
-					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', 'profilePic'],
+					attributes: [
+						'mobileNumber',
+						'email',
+						'firstname',
+						'lastname',
+						'profilePic',
+						'samparkVrund',
+						'appId',
+					],
 					where: {
+						...(samparkVrund && { samparkVrund }),
+						...(appId === 'yes'
+							? {
+									appId: {
+										[Op.not]: '',
+									},
+							  }
+							: appId === 'no'
+							? {
+									appId: '',
+							  }
+							: {}),
 						[Op.or]: {
 							firstname: {
 								[Op.iLike]: `%${searchTxt}%`,
@@ -521,8 +569,19 @@ export const getFollowUpList = async (
 							},
 						},
 					},
+					...(appId === 'yes' && {
+						order: [['updatedAt', 'DESC']],
+					}),
 				},
-				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
+				{
+					model: Karykarm,
+					as: 'karykarmData',
+					foreignKey: 'karykarmId',
+					where: {
+						...(karykarmId && { id: karykarmId }),
+						...(followUpStart && { followUpStart }),
+					},
+				},
 			],
 		}
 		if (searchTxt !== '') {
@@ -556,6 +615,7 @@ export const getAttendanceList = async (userId: string) => {
 				},
 				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
 			],
+			order: [['createdAt', 'DESC']],
 		})
 		if (!followUpList) {
 			return null
@@ -595,7 +655,22 @@ export const getProfileData = async (payload: any) => {
 	try {
 		const profileData = await User.findOne({
 			where: { id: payload.id, active: true },
+			// include: [{ model: SatsangProfile, as: 'satsangData', foreignKey: 'userId' }],
 			attributes: { exclude: ['password'] },
+		})
+		if (!profileData) {
+			return null
+		}
+		return profileData
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+export const satsangData = async (payload: any) => {
+	try {
+		const profileData = await SatsangProfile.findOne({
+			where: { userId: payload.id },
 		})
 		if (!profileData) {
 			return null
@@ -629,6 +704,41 @@ export const updateFollowUp = async (payload: any) => {
 							where: {
 								id: payload.id,
 							},
+						}
+					)
+				})
+				.catch((error) => {
+					Logger.error(error)
+					return null
+				})
+			return followUp
+		} catch (error) {
+			Logger.error(error)
+		}
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const changeAttendance = async (payload: any) => {
+	try {
+		const isExist = await FollowUp.findOne({
+			where: { userId: payload.userId, karykarmId: payload.karykarmId },
+		})
+		if (!isExist) return false
+		try {
+			const followUp = await FollowUp.findOne({
+				where: { userId: payload.userId, karykarmId: payload.karykarmId },
+			})
+				.then((result) => {
+					result!.update(
+						{
+							attendance: payload.attendance,
+							appattendance: payload.appattendance,
+						},
+						{
+							where: { userId: payload.userId, karykarmId: payload.karykarmId },
 						}
 					)
 				})

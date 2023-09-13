@@ -13,10 +13,12 @@ import { errorHandler, responseHandler } from '@helpers/responseHandlers'
 import { hash } from 'bcrypt'
 import {
 	assignSamparkKarykar,
+	changeAttendance,
 	createKarykarm,
 	createSamparkVrund,
 	createSatsangProfile,
 	createUser,
+	deleteKarykarm,
 	deleteUser,
 	followUpInitiate,
 	getAllKarykarm,
@@ -28,6 +30,7 @@ import {
 	getFollowUpList,
 	getProfileData,
 	getUserService,
+	satsangData,
 	updateFollowUp,
 	updateKarykarm,
 	updateSatsangProfile,
@@ -69,6 +72,14 @@ export const createUserApi = async (req: Request, res: Response) => {
 			samparkVrund,
 			job,
 			business,
+			occupation,
+			occupationFiled,
+			fatherOccupation,
+			fatherOccupationFiled,
+			fatherMobileNumber,
+			district,
+			taluka,
+			village,
 		}: {
 			// username: string
 			firstname: string
@@ -97,6 +108,14 @@ export const createUserApi = async (req: Request, res: Response) => {
 			samparkVrund: string
 			job: string
 			business: string
+			occupation: string
+			occupationFiled: string
+			fatherOccupation: string
+			fatherOccupationFiled: string
+			fatherMobileNumber: number
+			district: string
+			taluka: string
+			village: string
 		} = req.body
 
 		const userObject: UserInterface = {
@@ -129,6 +148,14 @@ export const createUserApi = async (req: Request, res: Response) => {
 			samparkVrund,
 			job,
 			business,
+			occupation,
+			occupationFiled,
+			fatherOccupation,
+			fatherOccupationFiled,
+			fatherMobileNumber,
+			district,
+			taluka,
+			village,
 		}
 
 		const validator = await registerRequest(userObject)
@@ -136,8 +163,6 @@ export const createUserApi = async (req: Request, res: Response) => {
 		if (validator.error) {
 			return errorHandler({ res, err: validator.message })
 		}
-
-		userObject.password = await hash(password, 10)
 
 		if (id) {
 			const user = await updateUser(userObject)
@@ -158,6 +183,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			userObject.id = id
 				? id
 				: `${firstname.toLowerCase()}${Math.floor(Math.random() * (999 - 100 + 1) + 100)}`
+			userObject.password = await hash(password, 10)
 			const user = await createUser(userObject)
 			if (user === false) {
 				return errorHandler({
@@ -168,9 +194,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			}
 			if (user) {
 				await createSatsangProfile({
-					id: uuid(),
 					userId: userObject.id,
-					yuvakProfile: '',
 					nityaPuja: false,
 					nityaPujaYear: 0,
 					tilakChandlo: false,
@@ -187,6 +211,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 					sspStage: '',
 					ekadashi: false,
 					ekadashiYear: 0,
+					sspYear: 0,
 					niymitVanchan: false,
 					niymitVanchanYear: 0,
 				})
@@ -239,11 +264,9 @@ export const uploadImageApi = async (req: Request, res: Response) => {
 	}
 }
 
-export const createSatsangProfileApi = async (req: Request, res: Response) => {
+export const updateSatsangProfileApi = async (req: Request, res: Response) => {
 	try {
 		const {
-			id,
-			yuvakProfile,
 			nityaPuja,
 			nityaPujaYear,
 			tilakChandlo,
@@ -260,12 +283,11 @@ export const createSatsangProfileApi = async (req: Request, res: Response) => {
 			sspStage,
 			ekadashi,
 			ekadashiYear,
+			sspYear,
 			niymitVanchan,
 			niymitVanchanYear,
 			userId,
 		}: {
-			id: string
-			yuvakProfile: string
 			nityaPuja: boolean
 			nityaPujaYear: number
 			tilakChandlo: boolean
@@ -282,14 +304,13 @@ export const createSatsangProfileApi = async (req: Request, res: Response) => {
 			sspStage: string
 			ekadashi: boolean
 			ekadashiYear: number
+			sspYear: number
 			niymitVanchan: boolean
 			niymitVanchanYear: number
 			userId: string
 		} = req.body
 
 		const satsangProfileObject: satsangProfileInterface = {
-			id: id ? id : uuid(),
-			yuvakProfile,
 			nityaPuja,
 			nityaPujaYear,
 			tilakChandlo,
@@ -306,18 +327,19 @@ export const createSatsangProfileApi = async (req: Request, res: Response) => {
 			sspStage,
 			ekadashi,
 			ekadashiYear,
+			sspYear,
 			niymitVanchan,
 			niymitVanchanYear,
 			userId,
 		}
 
-		const validator = await satsangProfileRequest({ id, userId })
+		// const validator = await satsangProfileRequest({ userId })
 
-		if (validator.error) {
-			return errorHandler({ res, err: validator.message })
-		}
+		// if (validator.error) {
+		// 	return errorHandler({ res, err: validator.message })
+		// }
 
-		if (id) {
+		if (userId) {
 			const satsangProfile = await updateSatsangProfile(satsangProfileObject)
 			return responseHandler({
 				res,
@@ -348,14 +370,18 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 
 		const samparkVrundObject: SamparkVrundInterface = {
 			karykar1profileId,
-			karykar2profileId,
+			karykar2profileId: karykar2profileId ? karykar2profileId : null,
 			socs,
 			vrundName,
 		}
 
-		const karykar1 = await getProfileData({ id: karykar1profileId, userType: 'karykar' })
-		const karykar2 = await getProfileData({ id: karykar2profileId, userType: 'karykar' })
-		if (karykar1 === null || karykar2 === null) {
+		const karykar1 = karykar1profileId
+			? await getProfileData({ id: karykar1profileId, userType: 'karykar' })
+			: null
+		const karykar2 = karykar2profileId
+			? await getProfileData({ id: karykar2profileId, userType: 'karykar' })
+			: null
+		if ((karykar1profileId && karykar1 === null) || (karykar2profileId && karykar2 === null)) {
 			return errorHandler({
 				res,
 				statusCode: 400,
@@ -394,15 +420,19 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			})
 		}
 		// Karykar 1
-		await updateUser({
-			...karykar1?.dataValues,
-			samparkVrund: samparkVrund?.dataValues?.vrundName,
-		})
+		if (karykar1profileId && karykar1) {
+			await updateUser({
+				...karykar1?.dataValues,
+				samparkVrund: samparkVrund?.dataValues?.vrundName,
+			})
+		}
 		// Karykar 2
-		await updateUser({
-			...karykar2?.dataValues,
-			samparkVrund: samparkVrund?.dataValues?.vrundName,
-		})
+		if (karykar2profileId && karykar2) {
+			await updateUser({
+				...karykar2?.dataValues,
+				samparkVrund: samparkVrund?.dataValues?.vrundName,
+			})
+		}
 		return responseHandler({
 			res,
 			status: 200,
@@ -420,27 +450,27 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 	try {
 		const {
 			id,
-			// samparkVrund,
-			houseNumber,
-			socName,
-			nearBy,
-			area,
-		}: {
+			samparkVrund,
+		}: // houseNumber,
+		// socName,
+		// nearBy,
+		// area,
+		{
 			id: string
-			// samparkVrund: string
-			houseNumber: string
-			socName: string
-			nearBy: string
-			area: string
+			samparkVrund: string
+			// houseNumber: string
+			// socName: string
+			// nearBy: string
+			// area: string
 		} = req.body
 
 		const userObject: any = {
 			id,
-			// samparkVrund,
-			houseNumber,
-			socName,
-			nearBy,
-			area,
+			samparkVrund,
+			// houseNumber,
+			// socName,
+			// nearBy,
+			// area,
 		}
 
 		if (id) {
@@ -563,6 +593,34 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 				data: { karykarm },
 			})
 		}
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const deleteKarykarmApi = async (req: Request, res: Response) => {
+	try {
+		const {
+			id,
+		}: {
+			id: string
+		} = req.body
+
+		const karykarm = await deleteKarykarm(id)
+		if (karykarm === false) {
+			return errorHandler({
+				res,
+				statusCode: 409,
+				err: Messages.EMAIL_EXIST,
+			})
+		}
+		return responseHandler({
+			res,
+			status: 200,
+			msg: Messages.YUVAK_CREATED_SUCCESS,
+			data: { karykarm },
+		})
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -831,6 +889,14 @@ export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 	}
 }
 
+export const wakeUpApi = async (req: Request, res: Response) => {
+	try {
+		return responseHandler({ res, msg: 'Wake up bro you can sleep today' })
+	} catch (error) {
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
 export const getAllSamparkKarykarAPI = async (req: Request, res: Response) => {
 	try {
 		const karykarList = await getAllSamparkKarykar({})
@@ -912,14 +978,20 @@ export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 export const getFollowUpListApi = async (req: Request, res: Response) => {
 	try {
 		const {
+			userType = 'yuvak',
 			samparkVrund = 'A',
 			coming = '',
+			attendance = '',
+			appattendance = '',
+			appId = '',
 			followUp = '',
 			offset = 0,
 			limit = 10,
 			searchTxt = '',
 			orderBy = 'firstname',
 			orderType = 'DESC',
+			karykarmId = '',
+			followUpStart = '',
 		} = req.query
 
 		const strOffset = offset ? offset.toString() : '0'
@@ -929,16 +1001,26 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 		const strorderType = orderType ? orderType.toString() : 'DESC'
 		const strorfollowUp = followUp ? followUp.toString() : ''
 		const strorcoming = coming ? coming.toString() : ''
+		const strorattendance = attendance ? attendance.toString() : ''
+		const strorappattendance = appattendance ? appattendance.toString() : ''
+		const strorappId = appId ? appId.toString() : ''
+		const strorkarykarmId = karykarmId ? karykarmId.toString() : ''
 
 		const followUpList = await getFollowUpList(
+			userType,
 			samparkVrund,
 			strorfollowUp,
 			strorcoming,
+			strorattendance,
+			strorappattendance,
+			strorappId,
 			parseInt(strOffset!),
 			parseInt(strLimit!),
 			search,
 			strorderBy,
-			strorderType
+			strorderType,
+			strorkarykarmId,
+			followUpStart.toString()
 		)
 		if (followUpList === null) {
 			return errorHandler({
@@ -1004,6 +1086,7 @@ export const getProfileDataApi = async (req: Request, res: Response) => {
 		const { id = '' } = req.query
 
 		const profileData = await getProfileData({ id })
+		const satsangUserData = await satsangData({ id })
 		if (profileData === null) {
 			return errorHandler({
 				res,
@@ -1012,7 +1095,11 @@ export const getProfileDataApi = async (req: Request, res: Response) => {
 			})
 		}
 
-		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: profileData })
+		return responseHandler({
+			res,
+			msg: Messages.GET_USER_SUCCESS,
+			data: { ...profileData.dataValues, satsangUserData },
+		})
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -1025,6 +1112,31 @@ export const updateFollowUpApi = async (req: Request, res: Response) => {
 			req.body
 
 		const followUpList = await updateFollowUp(data)
+		if (followUpList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const changeAttendanceApi = async (req: Request, res: Response) => {
+	try {
+		const data: {
+			userId: string
+			karykarmId: string
+			attendance: boolean
+			appattendance: boolean
+		} = req.body
+
+		const followUpList = await changeAttendance(data)
 		if (followUpList === null) {
 			return errorHandler({
 				res,

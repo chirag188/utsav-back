@@ -5,14 +5,13 @@ import { Table, Model, Column, ForeignKey, BelongsTo } from 'sequelize-typescrip
 import { satsangProfileInterface } from '@interfaces/user'
 import User from '@user/user.model'
 // import { afterCreateHooks } from './hooks'
-interface SatsangProfileAttributes extends Optional<satsangProfileInterface, 'id'> {}
+interface SatsangProfileAttributes extends Optional<satsangProfileInterface, 'userId'> {}
 
 @Table({ timestamps: true })
 class SatsangProfile extends Model<satsangProfileInterface, SatsangProfileAttributes> {
+	@ForeignKey(() => User)
 	@Column({ primaryKey: true })
-	id!: string
-	@Column
-	yuvakProfile!: string
+	userId!: string
 	@Column({ defaultValue: true })
 	nityaPuja!: boolean
 	@Column
@@ -41,6 +40,8 @@ class SatsangProfile extends Model<satsangProfileInterface, SatsangProfileAttrib
 	ssp!: boolean
 	@Column
 	sspStage!: string
+	@Column
+	sspYear!: number
 	@Column({ defaultValue: true })
 	ekadashi!: boolean
 	@Column
@@ -49,9 +50,6 @@ class SatsangProfile extends Model<satsangProfileInterface, SatsangProfileAttrib
 	niymitVanchan!: boolean
 	@Column
 	niymitVanchanYear!: number
-	@ForeignKey(() => User)
-	@Column
-	userId!: string
 
 	@BelongsTo(() => User)
 	user!: User

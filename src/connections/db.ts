@@ -15,7 +15,7 @@ const _host: string = Config.DB.DB_HOST!
 const _port: string = Config.DB.DB_PORT!
 
 const db = new Sequelize(
-	'postgres://dbutsav_4wyc_user:rlCCMLsGtb8Ks7DLPmFysijcGZO0YfHd@dpg-ci23bajhp8u1a18hb67g-a/dbutsav_4wyc?sslmode=no-verify',
+	`postgres://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}`,
 	{
 		storage: ':memory:',
 		logging: (msg) => Logger.info(msg),
