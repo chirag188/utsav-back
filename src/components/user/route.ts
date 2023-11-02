@@ -21,6 +21,8 @@ import {
 	wakeUpApi,
 	changeAttendanceApi,
 	deleteKarykarmApi,
+	getAllSevaAPI,
+	getAttendanceReportAPI,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -48,5 +50,7 @@ router.put('/updateFollowUp', updateFollowUpApi)
 router.put('/changeAttendance', changeAttendanceApi)
 router.get('/getAllSamparkKarykar', getAllSamparkKarykarAPI)
 router.get('/getAllUser', getAllUserAPI)
+router.get('/getAttendanceReport', getAttendanceReportAPI)
 router.get('/getAllKarykarm', getAllKarykarmAPI)
+router.get('/getAllSeva', getAllSevaAPI)
 export default router

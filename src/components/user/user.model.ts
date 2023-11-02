@@ -1,11 +1,9 @@
 import { Optional } from 'sequelize'
 
-import { Table, Model, Column, DataType, AfterCreate, AfterUpdate } from 'sequelize-typescript'
+import { Table, Model, Column, DataType, AfterCreate, AfterUpdate, ForeignKey, BelongsToMany, HasMany } from 'sequelize-typescript'
 
 import { UserInterface } from '@interfaces/user'
 import { afterCreateHooks, afterUpdateHooks } from './hooks'
-// import BankDetails from '@user/bankDetails.model'
-// import SatsangProfile from './satsangProfiles.model'
 
 interface UserAttributes extends Optional<UserInterface, 'id'> {}
 
@@ -13,8 +11,6 @@ interface UserAttributes extends Optional<UserInterface, 'id'> {}
 class User extends Model<UserInterface, UserAttributes> {
 	@Column({ primaryKey: true })
 	id!: string
-	// @Column({ unique: true })
-	// username!: string
 	@Column
 	firstname!: string
 	@Column
@@ -54,8 +50,6 @@ class User extends Model<UserInterface, UserAttributes> {
 	@Column({ unique: true })
 	email!: string
 	@Column({ defaultValue: '' })
-	seva!: string
-	@Column({ defaultValue: '' })
 	sevaIntrest!: string
 	@Column({ defaultValue: '1234' })
 	password!: string
@@ -87,16 +81,8 @@ class User extends Model<UserInterface, UserAttributes> {
 	taluka!: string
 	@Column
 	village!: string
-
-	// @HasOne(() => SatsangProfile, { onDelete: 'SET NULL' })
-	// satsangProfile!: SatsangProfile
-
-	// REFERENCE FOR ASSOCIATION
-	/* @HasMany(() => Projects, 'userId')
-	projects!: Projects[]
-
-	@HasMany(() => Order, 'userId')
-	orderId!: number */
+	@Column({ type: DataType.ARRAY(DataType.STRING) })
+	sevaList!: string[]
 
 	// Hooks
 	@AfterCreate

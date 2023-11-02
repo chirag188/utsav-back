@@ -24,8 +24,10 @@ import {
 	getAllKarykarm,
 	getAllSamparkKarykar,
 	getAllSamparkVrund,
+	getAllSeva,
 	getAllUser,
 	getAttendanceList,
+	getAttendanceReport,
 	getFollowUpData,
 	getFollowUpList,
 	getProfileData,
@@ -957,6 +959,49 @@ export const getAllUserAPI = async (req: Request, res: Response) => {
 	}
 }
 
+export const getAttendanceReportAPI = async (req: Request, res: Response) => {
+	try {
+		const {
+			userType = 'yuvak',
+			samparkVrund = 'A',
+			active = true,
+			offset = 0,
+			limit = 10,
+			searchTxt = '',
+			orderBy = 'firstname',
+			orderType = 'DESC',
+		} = req.query
+
+		const strOffset = offset ? offset.toString() : '0'
+		const strLimit = limit ? limit.toString() : '10'
+		const search = searchTxt ? searchTxt.toString() : ''
+		const strorderBy = orderBy ? orderBy.toString() : 'orderBy'
+		const strorderType = orderType ? orderType.toString() : 'DESC'
+
+		const userList = await getAttendanceReport(
+			parseInt(strOffset!),
+			parseInt(strLimit!),
+			search,
+			strorderBy,
+			strorderType,
+			userType,
+			samparkVrund,
+			active
+		)
+		if (userList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: userList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
 export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 	try {
 		// const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
@@ -1046,6 +1091,24 @@ export const getAttendanceListApi = async (req: Request, res: Response) => {
 				statusCode: 501,
 			})
 		const attendanceList = await getAttendanceList(req?.user?.id)
+		if (attendanceList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: attendanceList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getAllSevaAPI = async (req: Request, res: Response) => {
+	try {
+		const attendanceList = await getAllSeva(req?.body?.userId, req?.body?.sevaId)
 		if (attendanceList === null) {
 			return errorHandler({
 				res,

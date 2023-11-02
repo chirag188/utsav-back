@@ -14,6 +14,8 @@ import { Op } from 'sequelize'
 import Karykarm from './karykarm.model'
 import FollowUp from './followUp.model'
 import uploadImageToS3 from '@helpers/uploadFile'
+import Seva from './Seva.model'
+import SevaAllocated from './SevaAllocated.model'
 
 export const createUser = async (payload: UserInterface) => {
 	try {
@@ -356,6 +358,87 @@ export const getAllUser = async (
 	}
 }
 
+export const getAttendanceReport = async (
+	offset: number,
+	limit: number,
+	searchTxt: string,
+	orderBy: string,
+	orderType: string,
+	userType: string | any,
+	samparkVrund: string | any,
+	active: boolean | any
+) => {
+	try {
+		// let options: any = {
+		// 	offset,
+		// 	...(limit !== 30 && { limit }),
+		// 	where: {
+		// 		...(userType && { userType }),
+		// 		...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
+		// 		active,
+		// 	},
+		// 	attributes: { exclude: ['password'] },
+		// 	order: [[orderBy, orderType]],
+		// }
+		// if (searchTxt !== '') {
+		// 	options.where = {
+		// 		...(userType && { userType }),
+		// 		...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
+		// 		active,
+		// 		[Op.or]: {
+		// 			firstname: {
+		// 				[Op.iLike]: `%${searchTxt}%`,
+		// 			},
+		// 			lastname: {
+		// 				[Op.iLike]: `%${searchTxt}%`,
+		// 			},
+		// 			email: {
+		// 				[Op.iLike]: `%${searchTxt}%`,
+		// 			},
+		// 		},
+		// 	}
+		// }
+
+		const userList = await FollowUp.findAndCountAll({
+			// ...options,
+			include: [
+				{
+					model: User,
+					as: 'userData',
+					foreignKey: 'userId',
+					attributes: [
+						'id',
+						'middlename',
+						'deleteReason',
+						'active',
+						'userType',
+						'samparkVrund',
+						'mobileNumber',
+						'email',
+						'firstname',
+						'lastname',
+						'appId',
+					],
+				},
+				{
+					model: Karykarm,
+					as: 'karykarmData',
+					foreignKey: 'karykarmId',
+					attributes: ['id', 'karykarmId', 'karykarmName'],
+				},
+			],
+			attributes: { exclude: ['createdAt', 'updatedAt', 'how', 'appattendance'] },
+		})
+		if (!userList) {
+			return null
+		}
+		return userList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
 export const getAllKarykarm = async () =>
 	// userType: string | any,
 	// samparkVrund: string | any,
@@ -616,6 +699,43 @@ export const getAttendanceList = async (userId: string) => {
 				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
 			],
 			order: [['createdAt', 'DESC']],
+		})
+		if (!followUpList) {
+			return null
+		}
+		return followUpList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
+export const getAllSeva = async (userId: string, sevaId: string) => {
+	try {
+		const followUpList = await SevaAllocated.findAndCountAll({
+			where: { ...(sevaId && { sevaId }), ...(userId && { userId }) },
+			include: [
+				{
+					model: User,
+					as: 'userData',
+					foreignKey: 'userId',
+					attributes: [
+						'firstname',
+						'middlename',
+						'lastname',
+						'mobileNumber',
+						'active',
+						'profilePic',
+					],
+				},
+				{
+					model: Seva,
+					as: 'sevaData',
+					foreignKey: 'sevaId',
+					attributes: ['sevaName'],
+				},
+			],
+			order: [['id', 'DESC']],
 		})
 		if (!followUpList) {
 			return null

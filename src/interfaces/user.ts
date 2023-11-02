@@ -70,6 +70,16 @@ export interface SamparkVrundInterface {
 	socs?: string[]
 }
 
+export interface SevaInterface {
+	id: string
+	sevaName: string
+}
+export interface SevaAllocatedInterface {
+	id: string
+	sevaId: string
+	userId: string
+}
+
 export interface KarykarmInterface {
 	id: string
 	karykarmId?: number
