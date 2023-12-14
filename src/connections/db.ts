@@ -16,7 +16,7 @@ const _port: string = Config.DB.DB_PORT!
 
 const db = new Sequelize(
 	// 'postgres://utsavdb_user:9vXYrUOnQ1a3Rr7PAXozMJYCyBXBOAw9@dpg-cls621vqd2ns73e0i2l0-a/utsavdb?sslmode=no-verify',
-	'postgres://utsavdb_user:9vXYrUOnQ1a3Rr7PAXozMJYCyBXBOAw9@dpg-cls621vqd2ns73e0i2l0-a.oregon-postgres.render.com/utsavdb_5bfy?sslmode=no-verify',
+	"postgres://pacific:DOoTGk5jeopAg3wQVXOMimoWRyUyh75Z@dpg-cltg8ea1hbls73eekgtg-a.oregon-postgres.render.com/pacific?sslmode=no-verify",
 	{
 		storage: ':memory:',
 		logging: (msg) => Logger.info(msg),
