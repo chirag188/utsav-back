@@ -23,6 +23,7 @@ import {
 	deleteKarykarmApi,
 	getAllSevaAPI,
 	getAttendanceReportAPI,
+	genrateKarykarmReportAPI,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -52,5 +53,6 @@ router.get('/getAllSamparkKarykar', getAllSamparkKarykarAPI)
 router.get('/getAllUser', getAllUserAPI)
 router.get('/getAttendanceReport', getAttendanceReportAPI)
 router.get('/getAllKarykarm', getAllKarykarmAPI)
+router.get('/genrateKarykarmReport', genrateKarykarmReportAPI)
 router.get('/getAllSeva', getAllSevaAPI)
 export default router

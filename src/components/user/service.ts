@@ -463,6 +463,63 @@ export const getAllKarykarm = async () =>
 		}
 	}
 
+export const genrateKarykarmReport = async (
+	appId: string | any,
+	offset: number | any,
+	limit: number | any,
+	orderBy: string | any,
+	orderType: string | any,
+	karykarmId: string | any
+) =>
+	// userType: string | any,
+	// samparkVrund: string | any,
+	// active: boolean | any
+	{
+		try {
+			let options: any = {
+				offset,
+				where: {
+					karykarmId,
+				},
+				order: [[orderBy, orderType]],
+				include: [
+					{
+						model: User,
+						as: 'userData',
+						foreignKey: 'userId',
+						attributes: [
+							'mobileNumber',
+							'email',
+							'firstname',
+							'lastname',
+							'profilePic',
+							'samparkVrund',
+							'appId',
+						],
+					},
+					{
+						model: Karykarm,
+						as: 'karykarmData',
+						foreignKey: 'karykarmId',
+						where: {
+							...(karykarmId && { id: karykarmId }),
+						},
+					},
+				],
+			}
+			const followUpList = await FollowUp.findAndCountAll({
+				...options,
+			})
+			if (!followUpList) {
+				return null
+			}
+			return followUpList
+		} catch (err) {
+			Logger.error(err)
+			return null
+		}
+	}
+
 export const createKarykarm = async (payload: KarykarmInterface) => {
 	try {
 		const isExist = await Karykarm.findOne({ where: { karykarmTime: payload.karykarmTime } })
