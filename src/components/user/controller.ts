@@ -21,6 +21,7 @@ import {
 	deleteKarykarm,
 	deleteUser,
 	followUpInitiate,
+	genrateKarykarmReport,
 	getAllKarykarm,
 	getAllSamparkKarykar,
 	getAllSamparkVrund,
@@ -1006,6 +1007,40 @@ export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 	try {
 		// const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
 		const karykarmList = await getAllKarykarm()
+		if (karykarmList === null) {
+			return errorHandler({
+				res,
+				err: Messages.USER_NOT_FOUND,
+				statusCode: 502,
+			})
+		}
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: karykarmList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const genrateKarykarmReportAPI = async (req: Request, res: Response) => {
+	try {
+		const {
+			appId = '',
+			offset = 0,
+			limit = 10,
+			orderBy = 'createdAt',
+			orderType = 'DESC',
+			karykarmId = '',
+		} = req.query
+
+		const karykarmList = await genrateKarykarmReport(
+			appId,
+			offset,
+			limit,
+			orderBy,
+			orderType,
+			karykarmId
+		)
+
 		if (karykarmList === null) {
 			return errorHandler({
 				res,

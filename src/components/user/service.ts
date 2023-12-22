@@ -50,7 +50,7 @@ export const updateUser = async (payload: UserInterface) => {
 			// const location = await uploadImageToS3(payload.profilePic)
 			const user = await User.findOne({
 				where: {
-					email: payload.email,
+					id: payload.id,
 					active: true,
 				},
 				attributes: { exclude: ['password'] },
@@ -62,7 +62,7 @@ export const updateUser = async (payload: UserInterface) => {
 						},
 						{
 							where: {
-								email: payload.email,
+								id: payload.id,
 							},
 						}
 					)
@@ -457,6 +457,63 @@ export const getAllKarykarm = async () =>
 				return null
 			}
 			return karykarmList
+		} catch (err) {
+			Logger.error(err)
+			return null
+		}
+	}
+
+export const genrateKarykarmReport = async (
+	appId: string | any,
+	offset: number | any,
+	limit: number | any,
+	orderBy: string | any,
+	orderType: string | any,
+	karykarmId: string | any
+) =>
+	// userType: string | any,
+	// samparkVrund: string | any,
+	// active: boolean | any
+	{
+		try {
+			let options: any = {
+				offset,
+				where: {
+					karykarmId,
+				},
+				order: [[orderBy, orderType]],
+				include: [
+					{
+						model: User,
+						as: 'userData',
+						foreignKey: 'userId',
+						attributes: [
+							'mobileNumber',
+							'email',
+							'firstname',
+							'lastname',
+							'profilePic',
+							'samparkVrund',
+							'appId',
+						],
+					},
+					{
+						model: Karykarm,
+						as: 'karykarmData',
+						foreignKey: 'karykarmId',
+						where: {
+							...(karykarmId && { id: karykarmId }),
+						},
+					},
+				],
+			}
+			const followUpList = await FollowUp.findAndCountAll({
+				...options,
+			})
+			if (!followUpList) {
+				return null
+			}
+			return followUpList
 		} catch (err) {
 			Logger.error(err)
 			return null
