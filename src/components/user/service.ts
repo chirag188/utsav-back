@@ -50,7 +50,7 @@ export const updateUser = async (payload: UserInterface) => {
 			// const location = await uploadImageToS3(payload.profilePic)
 			const user = await User.findOne({
 				where: {
-					email: payload.email,
+					id: payload.id,
 					active: true,
 				},
 				attributes: { exclude: ['password'] },
@@ -62,7 +62,7 @@ export const updateUser = async (payload: UserInterface) => {
 						},
 						{
 							where: {
-								email: payload.email,
+								id: payload.id,
 							},
 						}
 					)
