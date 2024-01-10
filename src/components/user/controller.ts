@@ -503,14 +503,17 @@ export const deleteUserApi = async (req: Request, res: Response) => {
 		const {
 			id,
 			deleteReason,
+			active,
 		}: {
 			id: string
 			deleteReason: string
+			active: boolean
 		} = req.body
 
 		const userObject: any = {
 			id,
 			deleteReason,
+			active,
 		}
 
 		if (id) {

@@ -42,7 +42,7 @@ export const uploadImage = async (payload: any) => {
 
 export const updateUser = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { id: payload.id, active: true } })
+		const isExist = await User.findOne({ where: { id: payload.id } })
 		if (!isExist) return false
 		// const user = await User.create(payload)
 		try {
@@ -51,7 +51,6 @@ export const updateUser = async (payload: UserInterface) => {
 			const user = await User.findOne({
 				where: {
 					id: payload.id,
-					active: true,
 				},
 				attributes: { exclude: ['password'] },
 			})
@@ -83,13 +82,12 @@ export const updateUser = async (payload: UserInterface) => {
 
 export const assignSamparkKarykar = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { mobileNumber: payload.id, active: true } })
+		const isExist = await User.findOne({ where: { mobileNumber: payload.id } })
 		if (!isExist) return false
 		try {
 			const user = await User.findOne({
 				where: {
 					mobileNumber: payload.id,
-					active: true,
 				},
 				attributes: { exclude: ['password'] },
 			})
@@ -125,20 +123,19 @@ export const assignSamparkKarykar = async (payload: UserInterface) => {
 
 export const deleteUser = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { id: payload.id, active: true } })
+		const isExist = await User.findOne({ where: { id: payload.id } })
 		if (!isExist) return false
 		try {
 			const user = await User.findOne({
 				where: {
 					id: payload.id,
-					active: true,
 				},
 				attributes: { exclude: ['password'] },
 			})
 				.then((result) => {
 					result!.update(
 						{
-							active: false,
+							active: payload?.active || false,
 							deleteReason: payload.deleteReason,
 						},
 						{
@@ -831,7 +828,7 @@ export const getFollowUpData = async (payload: any) => {
 export const getProfileData = async (payload: any) => {
 	try {
 		const profileData = await User.findOne({
-			where: { id: payload.id, active: true },
+			where: { id: payload.id },
 			// include: [{ model: SatsangProfile, as: 'satsangData', foreignKey: 'userId' }],
 			attributes: { exclude: ['password'] },
 		})
