@@ -22,6 +22,8 @@ class User extends Model<UserInterface, UserAttributes> {
 	@Column
 	mobileUser!: string
 	@Column
+	userLevel!: string
+	@Column
 	houseNumber!: string
 	@Column
 	socName!: string

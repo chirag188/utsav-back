@@ -251,12 +251,26 @@ export const getUserService = async (filter: Partial<UserInterface>) => {
 	}
 }
 
-export const getAllSamparkVrund = async (filter: Partial<SamparkVrundInterface>) => {
+export const getAllSamparkVrund = async (mandal: string | any) => {
 	try {
 		const user = await SamparkVrund.findAndCountAll({
 			include: [
-				{ model: User, as: 'karykar1profile', foreignKey: 'karykar1profileId' },
-				{ model: User, as: 'karykar2profile', foreignKey: 'karykar2profileId' },
+				{
+					model: User,
+					as: 'karykar1profile',
+					foreignKey: 'karykar1profileId',
+					where: {
+						...(mandal && { mandal }),
+					},
+				},
+				{
+					model: User,
+					as: 'karykar2profile',
+					foreignKey: 'karykar2profileId',
+					// where: {
+					// 	...(mandal && { mandal }),
+					// },
+				},
 			],
 			order: [['vrundName', 'ASC']],
 		})
@@ -282,11 +296,12 @@ export const getAllSamparkVrund = async (filter: Partial<SamparkVrundInterface>)
 	}
 }
 
-export const getAllSamparkKarykar = async (filter: Partial<User>) => {
+export const getAllSamparkKarykar = async (mandal: string | any) => {
 	try {
 		const karykarList = await User.findAndCountAll({
 			where: {
 				userType: 'karykar',
+				...(mandal && { mandal }),
 			},
 			attributes: { exclude: ['password'] },
 		})
@@ -308,7 +323,8 @@ export const getAllUser = async (
 	orderType: string,
 	userType: string | any,
 	samparkVrund: string | any,
-	active: boolean | any
+	active: boolean | any,
+	mandal: string | any
 ) => {
 	try {
 		let options: any = {
@@ -316,6 +332,7 @@ export const getAllUser = async (
 			...(limit !== 30 && { limit }),
 			where: {
 				...(userType && { userType }),
+				...(mandal && { mandal }),
 				...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
 				active,
 			},
@@ -325,6 +342,7 @@ export const getAllUser = async (
 		if (searchTxt !== '') {
 			options.where = {
 				...(userType && { userType }),
+				...(mandal && { mandal }),
 				...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
 				active,
 				[Op.or]: {
@@ -436,7 +454,7 @@ export const getAttendanceReport = async (
 	}
 }
 
-export const getAllKarykarm = async () =>
+export const getAllKarykarm = async (mandal: string | any) =>
 	// userType: string | any,
 	// samparkVrund: string | any,
 	// active: boolean | any
@@ -444,11 +462,12 @@ export const getAllKarykarm = async () =>
 		try {
 			const karykarmList = await Karykarm.findAndCountAll({
 				order: [['createdAt', 'DESC']],
-				// where: {
-				// 	...(userType && { userType }),
-				// 	...(samparkVrund && { samparkVrund }),
-				// 	active,
-				// },
+				where: {
+					...(mandal && { mandal }),
+					// 	...(userType && { userType }),
+					// 	...(samparkVrund && { samparkVrund }),
+					// 	active,
+				},
 			})
 			if (!karykarmList) {
 				return null
@@ -586,6 +605,7 @@ export const followUpInitiate = async (payload: any) => {
 			const karykarm = await Karykarm.findOne({
 				where: {
 					id: payload.id,
+					mandal: payload.mandal,
 				},
 			})
 				.then((result) => {
@@ -596,6 +616,7 @@ export const followUpInitiate = async (payload: any) => {
 						{
 							where: {
 								id: payload.id,
+								mandal: payload.mandal,
 							},
 						}
 					)
@@ -608,6 +629,7 @@ export const followUpInitiate = async (payload: any) => {
 				const userList = await User.findAll({
 					where: {
 						active: true,
+						mandal: payload.mandal,
 					},
 				})
 				await Promise.all(
@@ -652,7 +674,8 @@ export const getFollowUpList = async (
 	orderBy: string,
 	orderType: string,
 	karykarmId: string,
-	followUpStart: string
+	followUpStart: string,
+	mandal: string | any
 ) => {
 	try {
 		let options: any = {
@@ -682,6 +705,7 @@ export const getFollowUpList = async (
 						'appId',
 					],
 					where: {
+						...(mandal && { mandal }),
 						...(samparkVrund && { samparkVrund }),
 						...(appId === 'yes'
 							? {
@@ -715,6 +739,7 @@ export const getFollowUpList = async (
 					as: 'karykarmData',
 					foreignKey: 'karykarmId',
 					where: {
+						...(mandal && { mandal }),
 						...(karykarmId && { id: karykarmId }),
 						...(followUpStart && { followUpStart }),
 					},
@@ -739,7 +764,7 @@ export const getFollowUpList = async (
 	}
 }
 
-export const getAttendanceList = async (userId: string) => {
+export const getAttendanceList = async (userId: string, mandal: string | any) => {
 	try {
 		const followUpList = await FollowUp.findAndCountAll({
 			where: { userId },
@@ -749,8 +774,18 @@ export const getAttendanceList = async (userId: string) => {
 					as: 'userData',
 					foreignKey: 'userId',
 					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', 'appId'],
+					where: {
+						...(mandal && { mandal }),
+					},
 				},
-				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
+				{
+					model: Karykarm,
+					as: 'karykarmData',
+					foreignKey: 'karykarmId',
+					where: {
+						...(mandal && { mandal }),
+					},
+				},
 			],
 			order: [['createdAt', 'DESC']],
 		})

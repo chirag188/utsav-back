@@ -12,6 +12,7 @@ export const registerRequest = async (data: Object) => {
 		lastname: Joi.string().required(),
 		mobileNumber: Joi.number().required(),
 		mobileUser: Joi.string().required(),
+		userLevel: Joi.string(),
 		houseNumber: Joi.string().allow(null, ''),
 		socName: Joi.string().allow(null, ''),
 		nearBy: Joi.string().allow(null, ''),

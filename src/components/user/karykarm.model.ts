@@ -23,6 +23,8 @@ class Karykarm extends Model<KarykarmInterface, KarykarmAttributes> {
 	karykarmTime!: Date
 	@Column
 	followUpStart!: string
+	@Column
+	mandal!: string
 	// @Column
 	// followUpEnd!: boolean
 	@Column

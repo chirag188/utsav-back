@@ -54,6 +54,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			lastname,
 			mobileNumber,
 			mobileUser,
+			userLevel,
 			houseNumber,
 			socName,
 			nearBy,
@@ -90,6 +91,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			lastname: string
 			mobileNumber: number
 			mobileUser: string
+			userLevel: string
 			houseNumber: string
 			socName: string
 			nearBy: string
@@ -131,6 +133,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			lastname,
 			mobileNumber,
 			mobileUser,
+			userLevel,
 			houseNumber,
 			socName,
 			nearBy,
@@ -547,6 +550,7 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 			followUpStart,
 			// followUpEnd,
 			attendanceStart,
+			mandal,
 		}: // attendanceEnd,
 		{
 			id: string
@@ -555,6 +559,7 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 			followUpStart: string
 			// followUpEnd: boolean
 			attendanceStart: string
+			mandal: string
 			// attendanceEnd: boolean
 		} = req.body
 
@@ -565,6 +570,7 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 			followUpStart,
 			// followUpEnd,
 			attendanceStart,
+			mandal,
 			// attendanceEnd,
 		}
 
@@ -639,16 +645,19 @@ export const followUpInitiateApi = async (req: Request, res: Response) => {
 			id,
 			karykarmTime,
 			status,
+			mandal,
 		}: {
 			id: string
 			karykarmTime: Date
 			status: string
+			mandal: string
 		} = req.body
 
 		const karykarmObject: any = {
 			id,
 			karykarmTime,
 			status,
+			mandal,
 		}
 
 		const karykarm = await followUpInitiate(karykarmObject)
@@ -855,7 +864,8 @@ export const loginApi = async (req: Request, res: Response) => {
 
 export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 	try {
-		const user = await getAllSamparkVrund({})
+		const { mandal = '' } = req.query
+		const user = await getAllSamparkVrund(mandal)
 		if (user === null) {
 			return errorHandler({
 				res,
@@ -905,7 +915,9 @@ export const wakeUpApi = async (req: Request, res: Response) => {
 
 export const getAllSamparkKarykarAPI = async (req: Request, res: Response) => {
 	try {
-		const karykarList = await getAllSamparkKarykar({})
+		const { mandal = '' } = req.query
+
+		const karykarList = await getAllSamparkKarykar(mandal)
 		if (karykarList === null) {
 			return errorHandler({
 				res,
@@ -924,6 +936,7 @@ export const getAllUserAPI = async (req: Request, res: Response) => {
 	try {
 		const {
 			userType = 'yuvak',
+			mandal = '',
 			samparkVrund = 'A',
 			active = true,
 			offset = 0,
@@ -947,7 +960,8 @@ export const getAllUserAPI = async (req: Request, res: Response) => {
 			strorderType,
 			userType,
 			samparkVrund,
-			active
+			active,
+			mandal
 		)
 		if (userList === null) {
 			return errorHandler({
@@ -1008,8 +1022,9 @@ export const getAttendanceReportAPI = async (req: Request, res: Response) => {
 
 export const getAllKarykarmAPI = async (req: Request, res: Response) => {
 	try {
+		const { mandal = '' } = req.query
 		// const { userType = 'yuvak', samparkVrund = 'A', active = true } = req.query
-		const karykarmList = await getAllKarykarm()
+		const karykarmList = await getAllKarykarm(mandal)
 		if (karykarmList === null) {
 			return errorHandler({
 				res,
@@ -1062,6 +1077,7 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 	try {
 		const {
 			userType = 'yuvak',
+			mandal = '',
 			samparkVrund = 'A',
 			coming = '',
 			attendance = '',
@@ -1103,7 +1119,8 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 			strorderBy,
 			strorderType,
 			strorkarykarmId,
-			followUpStart.toString()
+			followUpStart.toString(),
+			mandal
 		)
 		if (followUpList === null) {
 			return errorHandler({
@@ -1128,7 +1145,7 @@ export const getAttendanceListApi = async (req: Request, res: Response) => {
 				err: Messages.USER_NOT_FOUND,
 				statusCode: 501,
 			})
-		const attendanceList = await getAttendanceList(req?.user?.id)
+		const attendanceList = await getAttendanceList(req?.user?.id, req?.user?.mandal)
 		if (attendanceList === null) {
 			return errorHandler({
 				res,

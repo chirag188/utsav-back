@@ -7,6 +7,7 @@ export interface UserInterface {
 	lastname: string
 	mobileNumber: number
 	mobileUser?: string
+	userLevel?: string
 	houseNumber?: string
 	socName?: string
 	nearBy?: string
@@ -88,6 +89,7 @@ export interface KarykarmInterface {
 	followUpStart?: string
 	// followUpEnd?: boolean
 	attendanceStart?: string
+	mandal?: string
 	// attendanceEnd?: boolean
 }
 
