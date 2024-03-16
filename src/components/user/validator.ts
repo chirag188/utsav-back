@@ -25,7 +25,7 @@ export const registerRequest = async (data: Object) => {
 		seva: Joi.string().allow(null, ''),
 		sevaIntrest: Joi.string().allow(null, ''),
 		password: Joi.string().allow(null, ''),
-		userType: Joi.string().required().valid('karykar', 'yuvak', 'admin'),
+		userType: Joi.string().required().valid('karykar', 'yuvak', 'admin', 'superadmin'),
 		profilePic: Joi.string().allow(null, ''),
 		job: Joi.string().allow(null, ''),
 		business: Joi.string().allow(null, ''),

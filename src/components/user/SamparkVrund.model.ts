@@ -18,12 +18,8 @@ interface samparkVrundAttributes extends Optional<SamparkVrundInterface, 'id'> {
 
 @Table({ timestamps: true })
 class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> {
-	@AutoIncrement
-	@Column({
-		primaryKey: true,
-		type: DataType.INTEGER,
-	})
-	id!: number
+	@Column({ primaryKey: true })
+	id!: string
 	@ForeignKey(() => User)
 	@Column
 	karykar1profileId!: string
@@ -32,8 +28,8 @@ class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> 
 	karykar2profileId!: string
 	@Column({ unique: true })
 	vrundName!: string
-	@Column({ type: DataType.ARRAY(DataType.STRING) })
-	socs!: string[]
+	@Column
+	socs!: string
 	// @Column({ type: DataType.ARRAY(DataType.STRING) })
 	// yuvaks!: string[]
 

@@ -235,6 +235,134 @@ export const createSamparkVrund = async (payload: SamparkVrundInterface) => {
 	}
 }
 
+export const updateSamparkVrund = async (payload: SamparkVrundInterface, mandal, oldVrundName) => {
+	try {
+		await SamparkVrund.findOne({
+			where: {
+				id: payload.id,
+			},
+		})
+			.then((result) => {
+				result!.update(
+					{
+						...payload,
+					},
+					{
+						where: {
+							id: payload.id,
+						},
+					}
+				)
+			})
+			.catch((error) => {
+				Logger.error(error)
+				return null
+			})
+		// return samparkVrund
+		const userList = await User.findAll({
+			where: {
+				active: true,
+				samparkVrund: oldVrundName,
+				mandal,
+			},
+		})
+		try {
+			await Promise.all(
+				userList?.map(async (item) => {
+					const user = await User.findOne({
+						where: {
+							id: item?.dataValues?.id,
+						},
+					})
+						.then((result) => {
+							result!.update(
+								{
+									samparkVrund: payload?.vrundName,
+								},
+								{
+									where: {
+										id: item?.dataValues?.id,
+									},
+								}
+							)
+						})
+						.catch((error) => {
+							Logger.error(error)
+							return null
+						})
+					return user
+				})
+			)
+		} catch (error) {
+			Logger.error(error)
+		}
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const getSamparkVrund = async (id: string | any) => {
+	try {
+		const vrund = await SamparkVrund.findOne({ where: { id } })
+		if (!vrund) return false
+		return vrund
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const deleteSamparkVrund = async (id: string, samparkVrund: string, mandal: string) => {
+	try {
+		const isExist = await SamparkVrund.findOne({ where: { karykar1profileId: id } })
+		if (!isExist) return false
+		await SamparkVrund.destroy({ where: { karykar1profileId: id } })
+		const userList = await User.findAll({
+			where: {
+				active: true,
+				samparkVrund,
+				mandal,
+			},
+		})
+		try {
+			await Promise.all(
+				userList?.map(async (item) => {
+					const user = await User.findOne({
+						where: {
+							id: item?.dataValues?.id,
+						},
+					})
+						.then((result) => {
+							result!.update(
+								{
+									samparkVrund: '',
+								},
+								{
+									where: {
+										id: item?.dataValues?.id,
+									},
+								}
+							)
+						})
+						.catch((error) => {
+							Logger.error(error)
+							return null
+						})
+					return user
+				})
+			)
+		} catch (error) {
+			Logger.error(error)
+		}
+		// await Karykarm.destroy({ where: { id } })
+		return true
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
 export const getUserService = async (filter: Partial<UserInterface>) => {
 	try {
 		const user = await User.findOne({
@@ -253,7 +381,7 @@ export const getUserService = async (filter: Partial<UserInterface>) => {
 
 export const getAllSamparkVrund = async (mandal: string | any) => {
 	try {
-		const user = await SamparkVrund.findAndCountAll({
+		const samparkVrundList = await SamparkVrund.findAll({
 			include: [
 				{
 					model: User,
@@ -274,22 +402,30 @@ export const getAllSamparkVrund = async (mandal: string | any) => {
 			],
 			order: [['vrundName', 'ASC']],
 		})
-		if (!user) {
+		if (!samparkVrundList) {
 			return null
 		}
-		// let result: any = []
-		// await Promise.all(
-		// 	user?.rows?.map(async (item) => {
-		// 		const list = await Promise.all(
-		// 			item?.dataValues?.yuvaks?.map(
-		// 				async (yuvak) => await User.findOne({ where: { id: yuvak } })
-		// 			)
-		// 		)
-		// 		result.push({ ...item?.dataValues, yuvaksList: list })
-		// 		return list
-		// 	})
-		// )
-		return user
+		const result: any = []
+		try {
+			await Promise.all(
+				samparkVrundList?.map(async (item) => {
+					const userList = await User.findAll({
+						where: {
+							samparkVrund: item?.dataValues?.vrundName,
+							userType: 'yuvak',
+						},
+					})
+					result.push({
+						...item?.dataValues,
+						userList,
+					})
+				})
+			)
+		} catch (error) {
+			Logger.error(error)
+		}
+
+		return result
 	} catch (err) {
 		Logger.error(err)
 		return null

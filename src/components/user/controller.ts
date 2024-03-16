@@ -19,6 +19,7 @@ import {
 	createSatsangProfile,
 	createUser,
 	deleteKarykarm,
+	deleteSamparkVrund,
 	deleteUser,
 	followUpInitiate,
 	genrateKarykarmReport,
@@ -32,10 +33,12 @@ import {
 	getFollowUpData,
 	getFollowUpList,
 	getProfileData,
+	getSamparkVrund,
 	getUserService,
 	satsangData,
 	updateFollowUp,
 	updateKarykarm,
+	updateSamparkVrund,
 	updateSatsangProfile,
 	updateUser,
 	uploadImage,
@@ -147,7 +150,10 @@ export const createUserApi = async (req: Request, res: Response) => {
 			seva,
 			sevaIntrest,
 			password,
-			userType: userType === 'karykar' || userType === 'admin' ? userType : 'yuvak',
+			userType:
+				userType === 'karykar' || userType === 'admin' || userType === 'superadmin'
+					? userType
+					: 'yuvak',
 			profilePic,
 			DOB,
 			gender,
@@ -370,7 +376,7 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 		}: {
 			karykar1profileId: string
 			karykar2profileId: string
-			socs: string[]
+			socs: string
 			vrundName: string
 		} = req.body
 
@@ -379,6 +385,7 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			karykar2profileId: karykar2profileId ? karykar2profileId : null,
 			socs,
 			vrundName,
+			id: uuid(),
 		}
 
 		const karykar1 = karykar1profileId
@@ -446,6 +453,141 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			data: { samparkVrund },
 		})
 		// }
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getSamparkVrundApi = async (req: Request, res: Response) => {
+	try {
+		const { id = '' } = req.query
+		const samparkVrund = await getSamparkVrund(id)
+		if (samparkVrund === false) {
+			return errorHandler({
+				res,
+				statusCode: 409,
+				err: Messages.EMAIL_EXIST,
+			})
+		}
+		return responseHandler({
+			res,
+			status: 200,
+			msg: 'Group Details',
+			data: { samparkVrund },
+		})
+		// }
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const updateSamparkVrundApi = async (req: Request, res: Response) => {
+	try {
+		const {
+			id,
+			karykar1profileId,
+			karykar2profileId,
+			socs,
+			vrundName,
+			mandal,
+			oldVrundName,
+		}: {
+			id: string
+			karykar1profileId: string
+			karykar2profileId: string
+			socs: string
+			vrundName: string
+			mandal: string
+			oldVrundName: string
+		} = req.body
+
+		const samparkVrundObject: SamparkVrundInterface = {
+			id,
+			karykar1profileId,
+			karykar2profileId: karykar2profileId ? karykar2profileId : null,
+			socs,
+			vrundName,
+		}
+
+		const karykar1 = karykar1profileId
+			? await getProfileData({ id: karykar1profileId, userType: 'karykar' })
+			: null
+		const karykar2 = karykar2profileId
+			? await getProfileData({ id: karykar2profileId, userType: 'karykar' })
+			: null
+		if ((karykar1profileId && karykar1 === null) || (karykar2profileId && karykar2 === null)) {
+			return errorHandler({
+				res,
+				statusCode: 400,
+				err: Messages.NOT_EMAIL_EXIST,
+			})
+		}
+
+		const samparkVrund = await updateSamparkVrund(samparkVrundObject, mandal, oldVrundName)
+		console.log({ samparkVrund })
+
+		// if (samparkVrund) {
+		// 	return errorHandler({
+		// 		res,
+		// 		statusCode: 409,
+		// 		err: Messages.EMAIL_EXIST,
+		// 	})
+		// }
+		// Karykar 1
+		if (karykar1profileId && karykar1) {
+			await updateUser({
+				...karykar1?.dataValues,
+				samparkVrund: vrundName,
+			})
+		}
+		// Karykar 2
+		if (karykar2profileId && karykar2) {
+			await updateUser({
+				...karykar2?.dataValues,
+				samparkVrund: vrundName,
+			})
+		}
+		return responseHandler({
+			res,
+			status: 200,
+			msg: Messages.SAMPARK_VRUND_SUCCESS,
+			data: { samparkVrund },
+		})
+		// }
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const deleteSamparkVrundApi = async (req: Request, res: Response) => {
+	try {
+		const {
+			karykar1profileId,
+			samparkVrund,
+			mandal,
+		}: {
+			karykar1profileId: string
+			samparkVrund: string
+			mandal: string
+		} = req.body
+		const deleteVrund = await deleteSamparkVrund(karykar1profileId, samparkVrund, mandal)
+
+		if (deleteVrund === false) {
+			return errorHandler({
+				res,
+				statusCode: 409,
+				err: Messages.EMAIL_EXIST,
+			})
+		}
+		return responseHandler({
+			res,
+			status: 200,
+			msg: 'Sampark Vrund Deleted Successfully.',
+			data: { deleteVrund },
+		})
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -865,8 +1007,8 @@ export const loginApi = async (req: Request, res: Response) => {
 export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 	try {
 		const { mandal = '' } = req.query
-		const user = await getAllSamparkVrund(mandal)
-		if (user === null) {
+		const samparkVrundList = await getAllSamparkVrund(mandal)
+		if (samparkVrundList === null) {
 			return errorHandler({
 				res,
 				err: Messages.USER_NOT_FOUND,
@@ -898,7 +1040,7 @@ export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 		// 	countryCode: user.countryCode,
 		// }
 
-		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: user })
+		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: samparkVrundList })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })

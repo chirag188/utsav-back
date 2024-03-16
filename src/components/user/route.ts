@@ -24,6 +24,9 @@ import {
 	getAllSevaAPI,
 	getAttendanceReportAPI,
 	genrateKarykarmReportAPI,
+	deleteSamparkVrundApi,
+	getSamparkVrundApi,
+	updateSamparkVrundApi,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -37,6 +40,9 @@ router.put('/updateUser', createUserApi)
 router.post('/uploadImage', uploadImageApi)
 router.put('/updateSatsangProfile', updateSatsangProfileApi)
 router.post('/createSamparkVrund', createSamparkVrundApi)
+router.post('/updateSamparkVrund', updateSamparkVrundApi)
+router.get('/getSamparkVrund', getSamparkVrundApi)
+router.post('/deleteSamparkVrund', deleteSamparkVrundApi)
 router.get('/getAllSamparkVrund', getAllSamparkVrundAPI)
 router.put('/assignSamparkKarykar', assignSamparkKarykarApi)
 router.put('/deleteUser', deleteUserApi)

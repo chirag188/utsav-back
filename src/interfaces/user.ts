@@ -22,7 +22,7 @@ export interface UserInterface {
 	seva?: string
 	sevaIntrest?: string
 	password?: string
-	userType: 'karykar' | 'yuvak' | 'admin' | 'superAdmin' | 'nirikshak' | 'sanchalak'
+	userType: 'karykar' | 'yuvak' | 'admin' | 'superadmin' | 'nirikshak' | 'sanchalak'
 	profilePic?: any
 	DOB?: Date
 	gender: string
@@ -64,11 +64,12 @@ export interface satsangProfileInterface {
 }
 
 export interface SamparkVrundInterface {
-	id?: number
+	[x: string]: any
+	id?: string
 	karykar1profileId: string
 	karykar2profileId?: string | any
 	vrundName: string
-	socs?: string[]
+	socs?: string
 }
 
 export interface SevaInterface {
