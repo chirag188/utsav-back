@@ -413,6 +413,7 @@ export const getAllSamparkVrund = async (mandal: string | any) => {
 						where: {
 							samparkVrund: item?.dataValues?.vrundName,
 							userType: 'yuvak',
+							active: true,
 						},
 					})
 					result.push({
