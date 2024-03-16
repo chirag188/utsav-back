@@ -70,6 +70,7 @@ export interface SamparkVrundInterface {
 	karykar2profileId?: string | any
 	vrundName: string
 	socs?: string
+	mandal?: string
 }
 
 export interface SevaInterface {

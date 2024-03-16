@@ -204,6 +204,7 @@ export const createSamparkVrund = async (payload: SamparkVrundInterface) => {
 	try {
 		const isExist = await SamparkVrund.findOne({
 			where: {
+				mandal: payload.mandal,
 				[Op.or]: [
 					{
 						karykar1profileId: payload.karykar1profileId,
@@ -235,11 +236,16 @@ export const createSamparkVrund = async (payload: SamparkVrundInterface) => {
 	}
 }
 
-export const updateSamparkVrund = async (payload: SamparkVrundInterface, mandal, oldVrundName) => {
+export const updateSamparkVrund = async (
+	payload: SamparkVrundInterface,
+	mandal: string,
+	oldVrundName: string
+) => {
 	try {
 		await SamparkVrund.findOne({
 			where: {
 				id: payload.id,
+				mandal,
 			},
 		})
 			.then((result) => {
@@ -302,9 +308,9 @@ export const updateSamparkVrund = async (payload: SamparkVrundInterface, mandal,
 	}
 }
 
-export const getSamparkVrund = async (id: string | any) => {
+export const getSamparkVrund = async (id: string | any, mandal: string | any) => {
 	try {
-		const vrund = await SamparkVrund.findOne({ where: { id } })
+		const vrund = await SamparkVrund.findOne({ where: { id, mandal } })
 		if (!vrund) return false
 		return vrund
 	} catch (error) {
@@ -315,9 +321,9 @@ export const getSamparkVrund = async (id: string | any) => {
 
 export const deleteSamparkVrund = async (id: string, samparkVrund: string, mandal: string) => {
 	try {
-		const isExist = await SamparkVrund.findOne({ where: { karykar1profileId: id } })
+		const isExist = await SamparkVrund.findOne({ where: { karykar1profileId: id, mandal } })
 		if (!isExist) return false
-		await SamparkVrund.destroy({ where: { karykar1profileId: id } })
+		await SamparkVrund.destroy({ where: { karykar1profileId: id, mandal } })
 		const userList = await User.findAll({
 			where: {
 				active: true,
@@ -400,6 +406,9 @@ export const getAllSamparkVrund = async (mandal: string | any) => {
 					// },
 				},
 			],
+			where: {
+				mandal,
+			},
 			order: [['vrundName', 'ASC']],
 		})
 		if (!samparkVrundList) {

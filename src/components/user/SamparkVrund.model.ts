@@ -30,6 +30,8 @@ class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> 
 	vrundName!: string
 	@Column
 	socs!: string
+	@Column
+	mandal!: string
 	// @Column({ type: DataType.ARRAY(DataType.STRING) })
 	// yuvaks!: string[]
 

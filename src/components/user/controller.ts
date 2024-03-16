@@ -373,11 +373,13 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			karykar2profileId,
 			socs,
 			vrundName,
+			mandal,
 		}: {
 			karykar1profileId: string
 			karykar2profileId: string
 			socs: string
 			vrundName: string
+			mandal: string
 		} = req.body
 
 		const samparkVrundObject: SamparkVrundInterface = {
@@ -386,6 +388,7 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			socs,
 			vrundName,
 			id: uuid(),
+			mandal,
 		}
 
 		const karykar1 = karykar1profileId
@@ -461,8 +464,8 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 
 export const getSamparkVrundApi = async (req: Request, res: Response) => {
 	try {
-		const { id = '' } = req.query
-		const samparkVrund = await getSamparkVrund(id)
+		const { id = '', mandal = '' } = req.query
+		const samparkVrund = await getSamparkVrund(id, mandal)
 		if (samparkVrund === false) {
 			return errorHandler({
 				res,
@@ -509,6 +512,7 @@ export const updateSamparkVrundApi = async (req: Request, res: Response) => {
 			karykar2profileId: karykar2profileId ? karykar2profileId : null,
 			socs,
 			vrundName,
+			mandal,
 		}
 
 		const karykar1 = karykar1profileId
@@ -526,7 +530,6 @@ export const updateSamparkVrundApi = async (req: Request, res: Response) => {
 		}
 
 		const samparkVrund = await updateSamparkVrund(samparkVrundObject, mandal, oldVrundName)
-		console.log({ samparkVrund })
 
 		// if (samparkVrund) {
 		// 	return errorHandler({
