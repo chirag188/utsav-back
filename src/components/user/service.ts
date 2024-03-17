@@ -88,6 +88,9 @@ export const assignSamparkKarykar = async (payload: UserInterface) => {
 			const user = await User.findOne({
 				where: {
 					mobileNumber: payload.id,
+					[Op.not]: {
+						userType: 'superadmin',
+					},
 				},
 				attributes: { exclude: ['password'] },
 			})
@@ -129,6 +132,9 @@ export const deleteUser = async (payload: UserInterface) => {
 			const user = await User.findOne({
 				where: {
 					id: payload.id,
+					[Op.not]: {
+						userType: 'superadmin',
+					},
 				},
 				attributes: { exclude: ['password'] },
 			})
@@ -270,6 +276,9 @@ export const updateSamparkVrund = async (
 				active: true,
 				samparkVrund: oldVrundName,
 				mandal,
+				[Op.not]: {
+					userType: 'superadmin',
+				},
 			},
 		})
 		try {
@@ -278,6 +287,7 @@ export const updateSamparkVrund = async (
 					const user = await User.findOne({
 						where: {
 							id: item?.dataValues?.id,
+							active: true,
 						},
 					})
 						.then((result) => {
@@ -329,6 +339,9 @@ export const deleteSamparkVrund = async (id: string, samparkVrund: string, manda
 				active: true,
 				samparkVrund,
 				mandal,
+				[Op.not]: {
+					userType: 'superadmin',
+				},
 			},
 		})
 		try {
@@ -337,6 +350,7 @@ export const deleteSamparkVrund = async (id: string, samparkVrund: string, manda
 					const user = await User.findOne({
 						where: {
 							id: item?.dataValues?.id,
+							active: true,
 						},
 					})
 						.then((result) => {
@@ -435,7 +449,7 @@ export const getAllSamparkVrund = async (mandal: string | any) => {
 			Logger.error(error)
 		}
 		result.sort(function (a: any, b: any) {
-			return a?.vrundName > b?.vrundName
+			return (a?.vrundName || '')?.localeCompare(b?.vrundName || '')
 		})
 		return result
 	} catch (err) {
@@ -778,6 +792,9 @@ export const followUpInitiate = async (payload: any) => {
 					where: {
 						active: true,
 						mandal: payload.mandal,
+						[Op.not]: {
+							userType: 'superadmin',
+						},	
 					},
 				})
 				await Promise.all(
