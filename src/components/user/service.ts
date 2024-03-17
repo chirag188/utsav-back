@@ -434,7 +434,9 @@ export const getAllSamparkVrund = async (mandal: string | any) => {
 		} catch (error) {
 			Logger.error(error)
 		}
-
+		result.sort(function (a: any, b: any) {
+			return a?.vrundName > b?.vrundName
+		})
 		return result
 	} catch (err) {
 		Logger.error(err)
