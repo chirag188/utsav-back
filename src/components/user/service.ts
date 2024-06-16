@@ -462,7 +462,7 @@ export const getAllSamparkKarykar = async (mandal: string | any) => {
 	try {
 		const karykarList = await User.findAndCountAll({
 			where: {
-				userType: 'karykar',
+				[Op.or]: [{ userType: 'admin' }, { userType: 'karykar' }],
 				...(mandal && { mandal }),
 			},
 			attributes: { exclude: ['password'] },
@@ -794,7 +794,7 @@ export const followUpInitiate = async (payload: any) => {
 						mandal: payload.mandal,
 						[Op.not]: {
 							userType: 'superadmin',
-						},	
+						},
 					},
 				})
 				await Promise.all(
