@@ -432,7 +432,7 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			return errorHandler({
 				res,
 				statusCode: 409,
-				err: Messages.EMAIL_EXIST,
+				err: "Can't Create Group",
 			})
 		}
 		// Karykar 1
@@ -470,7 +470,7 @@ export const getSamparkVrundApi = async (req: Request, res: Response) => {
 			return errorHandler({
 				res,
 				statusCode: 409,
-				err: Messages.EMAIL_EXIST,
+				err: "Group Not Found",
 			})
 		}
 		return responseHandler({
@@ -582,7 +582,7 @@ export const deleteSamparkVrundApi = async (req: Request, res: Response) => {
 			return errorHandler({
 				res,
 				statusCode: 409,
-				err: Messages.EMAIL_EXIST,
+				err: "Can't Delete Sampark Group",
 			})
 		}
 		return responseHandler({
@@ -630,7 +630,7 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 				return errorHandler({
 					res,
 					statusCode: 409,
-					err: Messages.NOT_EMAIL_EXIST,
+					err: "Not able assign sampark Karykar",
 				})
 			}
 			return responseHandler({
@@ -670,7 +670,7 @@ export const deleteUserApi = async (req: Request, res: Response) => {
 				return errorHandler({
 					res,
 					statusCode: 409,
-					err: Messages.NOT_EMAIL_EXIST,
+					err: "Can't delete user",
 				})
 			}
 			return responseHandler({
@@ -725,7 +725,7 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 				return errorHandler({
 					res,
 					statusCode: 409,
-					err: Messages.NOT_EMAIL_EXIST,
+					err: 'Karykarm Not Updated',
 				})
 			}
 			return responseHandler({
@@ -740,7 +740,7 @@ export const createKarykarmApi = async (req: Request, res: Response) => {
 				return errorHandler({
 					res,
 					statusCode: 409,
-					err: Messages.EMAIL_EXIST,
+					err: 'Karykarm Not Created',
 				})
 			}
 			return responseHandler({
@@ -769,7 +769,7 @@ export const deleteKarykarmApi = async (req: Request, res: Response) => {
 			return errorHandler({
 				res,
 				statusCode: 409,
-				err: Messages.EMAIL_EXIST,
+				err: 'Karykarm Not Found',
 			})
 		}
 		return responseHandler({
@@ -810,7 +810,7 @@ export const followUpInitiateApi = async (req: Request, res: Response) => {
 			return errorHandler({
 				res,
 				statusCode: 409,
-				err: Messages.NOT_EMAIL_EXIST,
+				err: 'Karykarm Not Found',
 			})
 		}
 		return responseHandler({
