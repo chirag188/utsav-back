@@ -514,8 +514,8 @@ export const getUpcomingBirthdayList = async (mandal: string | any) => {
 			return null
 		}
 
-		const today = moment().add(10, 'days').startOf('day')
-		const nextWeek = moment().add(30, 'days').endOf('day')
+		const today = moment().startOf('day')
+		const nextWeek = moment().add(14, 'days').endOf('day')
 		return yuvakList?.filter((user) => {
 			if (user?.dataValues?.DOB) {
 				const dob = moment(user?.dataValues?.DOB).year(moment().year())
