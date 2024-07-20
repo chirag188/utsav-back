@@ -15,8 +15,8 @@ const _password: string = Config.DB.DB_PASSWORD!
 // const _port: string = Config.DB.DB_PORT!
 
 const db = new Sequelize(
-	'postgres://utsav:3kdDqB5XIqr8AGFE5V1nBf3B5LvInAb0@dpg-cpnb6vg8fa8c73atvq20-a/utsav_db_sfad?sslmode=no-verify',
-	// "postgres://utsav:3kdDqB5XIqr8AGFE5V1nBf3B5LvInAb0@dpg-cpnb6vg8fa8c73atvq20-a.oregon-postgres.render.com/utsav_db_sfad?sslmode=no-verify"
+	// 'postgres://utsav:3kdDqB5XIqr8AGFE5V1nBf3B5LvInAb0@dpg-cpnb6vg8fa8c73atvq20-a/utsav_db_sfad?sslmode=no-verify',
+	"postgres://utsavdb_9fz9_user:KV8s4eq4cq4sqPV98TvclZRZPdFhBWZV@dpg-cqdragg8fa8c73dqksfg-a.oregon-postgres.render.com/utsavdb_9fz9?sslmode=no-verify",
 	{
 		storage: ':memory:',
 		logging: (msg) => Logger.info(msg),
