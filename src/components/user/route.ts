@@ -27,6 +27,7 @@ import {
 	deleteSamparkVrundApi,
 	getSamparkVrundApi,
 	updateSamparkVrundApi,
+	getUpcomingBirthdayListAPI,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -61,4 +62,5 @@ router.get('/getAttendanceReport', getAttendanceReportAPI)
 router.get('/getAllKarykarm', getAllKarykarmAPI)
 router.get('/genrateKarykarmReport', genrateKarykarmReportAPI)
 router.get('/getAllSeva', getAllSevaAPI)
+router.get('/getUpcomingBirthdayList', getUpcomingBirthdayListAPI)
 export default router

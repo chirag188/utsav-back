@@ -16,6 +16,7 @@ import FollowUp from './followUp.model'
 import uploadImageToS3 from '@helpers/uploadFile'
 import Seva from './Seva.model'
 import SevaAllocated from './SevaAllocated.model'
+import moment from 'moment'
 
 export const createUser = async (payload: UserInterface) => {
 	try {
@@ -471,6 +472,58 @@ export const getAllSamparkKarykar = async (mandal: string | any) => {
 			return null
 		}
 		return karykarList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
+export const getUpcomingBirthdayList = async (mandal: string | any) => {
+	try {
+		const yuvakList = await User.findAll({
+			where: {
+				// DOB: {
+				// [Op.and]: [
+				// 	Sequelize.where(
+				// 		Sequelize.fn('MONTH', Sequelize.col('DOB')),
+				// 		Sequelize.fn('MONTH', today.toDate())
+				// 	),
+				// 	Sequelize.where(Sequelize.fn('DAY', Sequelize.col('DOB')), {
+				// 		[Op.between]: [today.date(), nextWeek.date()],
+				// 	}),
+				// ],
+				// },
+				active: true,
+				...(mandal && { mandal }),
+			},
+			attributes: [
+				'id',
+				'firstname',
+				'middlename',
+				'lastname',
+				'mobileNumber',
+				'userType',
+				'samparkVrund',
+				'profilePic',
+				'DOB',
+				'active',
+			],
+			order: [['DOB', 'ASC']],
+		})
+		if (!yuvakList) {
+			return null
+		}
+
+		const today = moment().add(10, 'days').startOf('day')
+		const nextWeek = moment().add(30, 'days').endOf('day')
+		return yuvakList?.filter((user) => {
+			if (user?.dataValues?.DOB) {
+				const dob = moment(user?.dataValues?.DOB).year(moment().year())
+				return dob >= today && dob <= nextWeek
+			} else {
+				return false
+			}
+		})
 	} catch (err) {
 		Logger.error(err)
 		return null
