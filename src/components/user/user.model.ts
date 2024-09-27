@@ -1,19 +1,9 @@
 import { Optional } from 'sequelize'
 
-import {
-	Table,
-	Model,
-	Column,
-	DataType,
-	AfterCreate,
-	AfterUpdate,
-	HasOne,
-} from 'sequelize-typescript'
+import { Table, Model, Column, DataType, AfterCreate, AfterUpdate, ForeignKey, BelongsToMany, HasMany } from 'sequelize-typescript'
 
 import { UserInterface } from '@interfaces/user'
 import { afterCreateHooks, afterUpdateHooks } from './hooks'
-// import BankDetails from '@user/bankDetails.model'
-// import SatsangProfile from './satsangProfiles.model'
 
 interface UserAttributes extends Optional<UserInterface, 'id'> {}
 
@@ -21,18 +11,18 @@ interface UserAttributes extends Optional<UserInterface, 'id'> {}
 class User extends Model<UserInterface, UserAttributes> {
 	@Column({ primaryKey: true })
 	id!: string
-	// @Column({ unique: true })
-	// username!: string
 	@Column
 	firstname!: string
 	@Column
 	middlename!: string
 	@Column
 	lastname!: string
-	@Column({ type: DataType.BIGINT })
+	@Column({ unique: true, type: DataType.BIGINT })
 	mobileNumber!: number
 	@Column
 	mobileUser!: string
+	@Column
+	userLevel!: string
 	@Column
 	houseNumber!: string
 	@Column
@@ -43,42 +33,58 @@ class User extends Model<UserInterface, UserAttributes> {
 	area!: string
 	@Column({ defaultValue: false })
 	married!: boolean
+	@Column({ defaultValue: false })
+	app!: boolean
+	@Column({ defaultValue: '' })
+	job!: string
+	@Column({ defaultValue: '' })
+	business!: string
+	@Column({ defaultValue: '' })
+	appId!: string
+	@Column({ defaultValue: true })
+	active!: boolean
+	@Column
+	deleteReason!: string
 	@Column
 	education!: string
 	@Column({ defaultValue: 'UTSAV' })
 	mandal!: string
 	@Column({ unique: true })
 	email!: string
-	@Column
-	seva!: string
-	@Column
+	@Column({ defaultValue: '' })
 	sevaIntrest!: string
-	@Column({ defaultValue: 'mahant' })
+	@Column({ defaultValue: '1234' })
 	password!: string
 	@Column
 	userType!: string
 	@Column
 	samparkVrund!: string
-	// @Column
-	// fcmToken!: string
+	@Column
+	token!: string
 	@Column({ defaultValue: '' })
 	profilePic!: string
 	@Column({ type: DataType.DATEONLY })
 	DOB!: Date
-	@Column
-	addressLine1!: string
 	@Column({ defaultValue: 'male' })
 	gender!: string
-
-	// @HasOne(() => SatsangProfile, { onDelete: 'SET NULL' })
-	// satsangProfile!: SatsangProfile
-
-	// REFERENCE FOR ASSOCIATION
-	/* @HasMany(() => Projects, 'userId')
-	projects!: Projects[]
-
-	@HasMany(() => Order, 'userId')
-	orderId!: number */
+	@Column
+	occupation!: string
+	@Column
+	occupationFiled!: string
+	@Column
+	fatherOccupation!: string
+	@Column
+	fatherOccupationFiled!: string
+	@Column({ type: DataType.BIGINT })
+	fatherMobileNumber!: number
+	@Column
+	district!: string
+	@Column
+	taluka!: string
+	@Column
+	village!: string
+	@Column({ type: DataType.ARRAY(DataType.STRING) })
+	sevaList!: string[]
 
 	// Hooks
 	@AfterCreate

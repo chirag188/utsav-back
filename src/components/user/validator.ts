@@ -6,29 +6,41 @@ export const registerRequest = async (data: Object) => {
 
 	const Schema = Joi.object({
 		id: Joi.string(),
+		appId: Joi.string().allow(null, ''),
 		firstname: Joi.string().required(),
-		middlename: Joi.string().required(),
+		middlename: Joi.string().allow(null, ''),
 		lastname: Joi.string().required(),
 		mobileNumber: Joi.number().required(),
 		mobileUser: Joi.string().required(),
-		houseNumber: Joi.string().required(),
-		socName: Joi.string().required(),
-		nearBy: Joi.string().required(),
-		area: Joi.string().required(),
+		userLevel: Joi.string(),
+		houseNumber: Joi.string().allow(null, ''),
+		socName: Joi.string().allow(null, ''),
+		nearBy: Joi.string().allow(null, ''),
+		area: Joi.string().allow(null, ''),
 		married: Joi.boolean().required(),
-		education: Joi.string().required(),
+		app: Joi.boolean().allow(false, null, ''),
+		education: Joi.string().allow(null, ''),
 		mandal: Joi.string().required(),
 		email: Joi.string().required(),
-		seva: Joi.string().required(),
-		sevaIntrest: Joi.string().required(),
-		password: Joi.string().required(),
-		userType: Joi.string().required().valid('Karykar', 'Yuvak'),
-		profilePic: Joi.string().required(),
-		DOB: Joi.date().required(),
-		addressLine1: Joi.string().required(),
+		seva: Joi.string().allow(null, ''),
+		sevaIntrest: Joi.string().allow(null, ''),
+		password: Joi.string().allow(null, ''),
+		userType: Joi.string().required().valid('karykar', 'yuvak', 'admin', 'superadmin'),
+		profilePic: Joi.string().allow(null, ''),
+		job: Joi.string().allow(null, ''),
+		business: Joi.string().allow(null, ''),
+		DOB: Joi.date().allow(null, ''),
 		gender: Joi.string().required(),
 		// username: Joi.string().required(),
-		samparkVrund: Joi.string(),
+		samparkVrund: Joi.string().allow(null, ''),
+		occupation: Joi.string().allow(null, ''),
+		occupationFiled: Joi.string().allow(null, ''),
+		fatherOccupation: Joi.string().allow(null, ''),
+		fatherOccupationFiled: Joi.string().allow(null, ''),
+		fatherMobileNumber: Joi.number().allow(null, ''),
+		district: Joi.string().allow(null, ''),
+		taluka: Joi.string().allow(null, ''),
+		village: Joi.string().allow(null, ''),
 	})
 
 	const validate = Schema.validate(data)
@@ -44,13 +56,11 @@ export const registerRequest = async (data: Object) => {
 	return { error, message }
 }
 
-export const satsangProfileRequest = async (data: { id: string; userId: string }) => {
+export const satsangProfileRequest = async (data: { userId: string }) => {
 	Logger.info('Inside  register request validator')
 
 	const Schema = Joi.object({
-		id: Joi.string().required(),
 		userId: Joi.string().required(),
-		// yuvakProfile: Joi.string(),
 		// nityaPuja: Joi.boolean(),
 		// nityaPujaYear: Joi.number(),
 		// tilakChandlo: Joi.boolean(),
@@ -138,24 +148,24 @@ export const samparkVrundRequest = async (data: Object) => {
 // 	return { error, message }
 // }
 
-// export const loginValidation = async (
-// 	data: Object
-// ): Promise<{ error: boolean; message: string }> => {
-// 	Logger.info('Inside login validator')
-// 	const Schema = Joi.object({
-// 		email: Joi.string().email().required(),
-// 		password: Joi.string().required(),
-// 	})
-// 	const validate = Schema.validate(data)
-// 	let error: boolean = false
-// 	let message: string = ''
-// 	if (validate.error) {
-// 		message = validate.error.details[0].message
-// 		message = message.replace(/"/g, '')
-// 		error = true
-// 	}
-// 	return { error, message }
-// }
+export const loginValidation = async (
+	data: Object
+): Promise<{ error: boolean; message: string }> => {
+	Logger.info('Inside login validator')
+	const Schema = Joi.object({
+		id: Joi.string().required(),
+		password: Joi.string().required(),
+	})
+	const validate = Schema.validate(data)
+	let error: boolean = false
+	let message: string = ''
+	if (validate.error) {
+		message = validate.error.details[0].message
+		message = message.replace(/"/g, '')
+		error = true
+	}
+	return { error, message }
+}
 
 // export const verifyLoginValidation = async (payload: {
 // 	countryCode: string
@@ -292,7 +302,6 @@ export const samparkVrundRequest = async (data: Object) => {
 // 		kycVerificationId: Joi.string().allow(null),
 // 		lastLogout: Joi.date(),
 // 		fcmToken: Joi.string(),
-// 		addressLine1: Joi.string(),
 // 		addressLine2: Joi.string(),
 // 		firstLogin: Joi.boolean(),
 // 	})

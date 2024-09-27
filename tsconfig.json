@@ -40,7 +40,7 @@
     ],
 	"exclude": ["node_modules", "build"],
 	"ts-node": {
-		"swc": false
+		"swc": true
 	}
 
 }

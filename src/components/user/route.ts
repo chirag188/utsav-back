@@ -3,22 +3,64 @@ import {
 	assignSamparkKarykarApi,
 	createKarykarmApi,
 	createSamparkVrundApi,
-	createSatsangProfileApi,
+	updateSatsangProfileApi,
 	createUserApi,
+	deleteUserApi,
 	followUpInitiateApi,
+	getAllKarykarmAPI,
+	getAllSamparkKarykarAPI,
 	getAllSamparkVrundAPI,
+	getAllUserAPI,
+	getAttendanceListApi,
+	getFollowUpDataApi,
 	getFollowUpListApi,
+	getProfileDataApi,
+	loginApi,
+	updateFollowUpApi,
+	uploadImageApi,
+	wakeUpApi,
+	changeAttendanceApi,
+	deleteKarykarmApi,
+	getAllSevaAPI,
+	getAttendanceReportAPI,
+	genrateKarykarmReportAPI,
+	deleteSamparkVrundApi,
+	getSamparkVrundApi,
+	updateSamparkVrundApi,
+	getUpcomingBirthdayListAPI,
 } from '@user/controller'
+import authorize from '@middlewares/authorize'
 
 const router = Router()
 
+router.get('/wakeUp', wakeUpApi)
+router.post('/login', loginApi)
+router.use(authorize)
 router.post('/create', createUserApi)
 router.put('/updateUser', createUserApi)
-router.put('/updateSatsangProfile', createSatsangProfileApi)
+router.post('/uploadImage', uploadImageApi)
+router.put('/updateSatsangProfile', updateSatsangProfileApi)
 router.post('/createSamparkVrund', createSamparkVrundApi)
+router.post('/updateSamparkVrund', updateSamparkVrundApi)
+router.get('/getSamparkVrund', getSamparkVrundApi)
+router.post('/deleteSamparkVrund', deleteSamparkVrundApi)
 router.get('/getAllSamparkVrund', getAllSamparkVrundAPI)
 router.put('/assignSamparkKarykar', assignSamparkKarykarApi)
+router.put('/deleteUser', deleteUserApi)
 router.post('/createKarykarm', createKarykarmApi)
+router.post('/deleteKarykarm', deleteKarykarmApi)
 router.put('/followUpInitiate', followUpInitiateApi)
 router.get('/getfollowUpList', getFollowUpListApi)
+router.get('/getAttendanceList', getAttendanceListApi)
+router.get('/getFollowUpData', getFollowUpDataApi)
+router.get('/getProfileData', getProfileDataApi)
+router.put('/updateFollowUp', updateFollowUpApi)
+router.put('/changeAttendance', changeAttendanceApi)
+router.get('/getAllSamparkKarykar', getAllSamparkKarykarAPI)
+router.get('/getAllUser', getAllUserAPI)
+router.get('/getAttendanceReport', getAttendanceReportAPI)
+router.get('/getAllKarykarm', getAllKarykarmAPI)
+router.get('/genrateKarykarmReport', genrateKarykarmReportAPI)
+router.get('/getAllSeva', getAllSevaAPI)
+router.get('/getUpcomingBirthdayList', getUpcomingBirthdayListAPI)
 export default router

@@ -28,15 +28,26 @@ class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	followUpId!: number
 	@Column
 	followUp!: boolean
-	@Column
+	@Column({ defaultValue: false })
 	attendance!: boolean
+	@Column({ defaultValue: false })
+	appattendance!: boolean
 	@ForeignKey(() => User)
 	@Column
 	userId!: string
 	@ForeignKey(() => Karykarm)
 	@Column
 	karykarmId!: string
-
+	@Column
+	status!: boolean
+	@Column
+	coming!: boolean
+	@Column
+	how!: string
+	@Column
+	remark!: string
+	@Column
+	samparkVrund!: string
 	@BelongsTo(() => User, 'userId')
 	userData!: User[]
 	@BelongsTo(() => Karykarm, 'karykarmId')

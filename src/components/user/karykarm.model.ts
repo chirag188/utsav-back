@@ -19,16 +19,18 @@ class Karykarm extends Model<KarykarmInterface, KarykarmAttributes> {
 	karykarmId!: number
 	@Column
 	karykarmName!: string
-	@Column
+	@Column({ unique: true })
 	karykarmTime!: Date
 	@Column
-	followUpStart!: boolean
+	followUpStart!: string
 	@Column
-	followUpEnd!: boolean
+	mandal!: string
+	// @Column
+	// followUpEnd!: boolean
 	@Column
-	attendanceStart!: boolean
-	@Column
-	attendanceEnd!: boolean
+	attendanceStart!: string
+	// @Column
+	// attendanceEnd!: boolean
 }
 
 export default Karykarm
