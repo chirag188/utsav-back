@@ -16,7 +16,7 @@ const _password: string = Config.DB.DB_PASSWORD!
 
 const db = new Sequelize(
 	// 'postgres://utsav:3kdDqB5XIqr8AGFE5V1nBf3B5LvInAb0@dpg-cpnb6vg8fa8c73atvq20-a/utsav_db_sfad?sslmode=no-verify',
-	"postgres://utsavdb:nNvNsKSSwtPXmFwLLwfuNa4WLqtwx96U@dpg-crmqkhlumphs739jbam0-a.oregon-postgres.render.com/utsavdb_pbir?sslmode=no-verify",
+	"postgres://utsavdb:QALaoTZ2dyrP5oYTob9XCoGt4vimEOn0@dpg-csck2il6l47c739br340-a.oregon-postgres.render.com/utsavdb_nsc7?sslmode=no-verify",
 	// "postgres://utsavdb_zxzg_user:KNHbBj7axeE91VUEPWLN1LR8f04OImCS@dpg-cr2ronrv2p9s739cirv0-a.oregon-postgres.render.com/utsavdb_zxzg?sslmode=no-verify",
 	{
 		storage: ':memory:',
