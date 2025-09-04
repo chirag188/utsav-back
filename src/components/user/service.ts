@@ -16,6 +16,7 @@ import FollowUp from './followUp.model'
 import uploadImageToS3 from '@helpers/uploadFile'
 import Seva from './Seva.model'
 import SevaAllocated from './SevaAllocated.model'
+import moment from 'moment'
 
 export const createUser = async (payload: UserInterface) => {
 	try {
@@ -98,10 +99,15 @@ export const assignSamparkKarykar = async (payload: UserInterface) => {
 					result!.update(
 						{
 							samparkVrund: payload.samparkVrund,
-							// houseNumber: payload.houseNumber,
-							// socName: payload.socName,
-							// nearBy: payload.nearBy,
-							// area: payload.area,
+							active: payload?.active || false,
+							deleteReason: payload.deleteReason || '',
+							firstname: payload.firstname || '',
+							middlename: payload.middlename || '',
+							lastname: payload.lastname || '',
+							houseNumber: payload.houseNumber || '',
+							socName: payload.socName || '',
+							nearBy: payload.nearBy || '',
+							area: payload.area || '',
 						},
 						{
 							where: {
@@ -471,6 +477,47 @@ export const getAllSamparkKarykar = async (mandal: string | any) => {
 			return null
 		}
 		return karykarList
+	} catch (err) {
+		Logger.error(err)
+		return null
+	}
+}
+
+export const getUpcomingBirthdayList = async (mandal: string | any) => {
+	try {
+		const yuvakList = await User.findAll({
+			where: {
+				active: true,
+				...(mandal && { mandal }),
+			},
+			attributes: [
+				'id',
+				'firstname',
+				'middlename',
+				'lastname',
+				'mobileNumber',
+				'userType',
+				'samparkVrund',
+				'profilePic',
+				'DOB',
+				'active',
+			],
+			order: [['DOB', 'ASC']],
+		})
+		if (!yuvakList) {
+			return null
+		}
+
+		const today = moment().startOf('day')
+		const nextWeek = moment().add(14, 'days').endOf('day')
+		return yuvakList?.filter((user) => {
+			if (user?.dataValues?.DOB) {
+				const dob = moment(user?.dataValues?.DOB).year(moment().year())
+				return dob >= today && dob <= nextWeek
+			} else {
+				return false
+			}
+		})
 	} catch (err) {
 		Logger.error(err)
 		return null
@@ -864,6 +911,7 @@ export const getFollowUpList = async (
 						'mobileNumber',
 						'email',
 						'firstname',
+						'middlename',
 						'lastname',
 						'profilePic',
 						'samparkVrund',

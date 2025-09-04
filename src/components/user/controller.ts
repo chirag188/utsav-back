@@ -34,6 +34,7 @@ import {
 	getFollowUpList,
 	getProfileData,
 	getSamparkVrund,
+	getUpcomingBirthdayList,
 	getUserService,
 	satsangData,
 	updateFollowUp,
@@ -470,7 +471,7 @@ export const getSamparkVrundApi = async (req: Request, res: Response) => {
 			return errorHandler({
 				res,
 				statusCode: 409,
-				err: "Group Not Found",
+				err: 'Group Not Found',
 			})
 		}
 		return responseHandler({
@@ -602,26 +603,41 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 		const {
 			id,
 			samparkVrund,
-		}: // houseNumber,
-		// socName,
-		// nearBy,
-		// area,
-		{
+			active,
+			deleteReason,
+			firstname,
+			middlename,
+			lastname,
+			houseNumber,
+			socName,
+			nearBy,
+			area,
+		}: {
 			id: string
 			samparkVrund: string
-			// houseNumber: string
-			// socName: string
-			// nearBy: string
-			// area: string
+			active: boolean
+			deleteReason: string
+			firstname: string
+			middlename: string
+			lastname: string
+			houseNumber: string
+			socName: string
+			nearBy: string
+			area: string
 		} = req.body
 
 		const userObject: any = {
 			id,
 			samparkVrund,
-			// houseNumber,
-			// socName,
-			// nearBy,
-			// area,
+			active,
+			deleteReason,
+			firstname,
+			middlename,
+			lastname,
+			houseNumber,
+			socName,
+			nearBy,
+			area,
 		}
 
 		if (id) {
@@ -630,7 +646,7 @@ export const assignSamparkKarykarApi = async (req: Request, res: Response) => {
 				return errorHandler({
 					res,
 					statusCode: 409,
-					err: "Not able assign sampark Karykar",
+					err: 'Not able assign sampark Karykar',
 				})
 			}
 			return responseHandler({
@@ -1318,6 +1334,29 @@ export const getAllSevaAPI = async (req: Request, res: Response) => {
 		}
 
 		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: attendanceList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getUpcomingBirthdayListAPI = async (req: Request, res: Response) => {
+	try {
+		const { mandal = '' } = req.query
+		const yuvakList = await getUpcomingBirthdayList(mandal)
+		if (yuvakList === null) {
+			return errorHandler({
+				res,
+				err: 'There is no user found',
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({
+			res,
+			msg: Messages.GET_USER_SUCCESS,
+			data: yuvakList,
+		})
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
