@@ -8,7 +8,7 @@ import {
 import { Request, Response } from 'express'
 // import jwt from 'jsonwebtoken'
 import { Logger } from '@config/logger'
-import { loginValidation, registerRequest, satsangProfileRequest } from '@user/validator'
+import { loginValidation, registerRequest } from '@user/validator'
 import { errorHandler, responseHandler } from '@helpers/responseHandlers'
 import { hash } from 'bcrypt'
 import {
@@ -37,6 +37,7 @@ import {
 	getUpcomingBirthdayList,
 	getUserService,
 	satsangData,
+	updateBulkAttendance,
 	updateFollowUp,
 	updateKarykarm,
 	updateSamparkVrund,
@@ -1448,6 +1449,36 @@ export const changeAttendanceApi = async (req: Request, res: Response) => {
 		}
 
 		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const bulkAttendanceApi = async (req: Request, res: Response) => {
+	try {
+		const { users, karykarmId }: { users: string[]; karykarmId: string } = req.body
+
+		if (!users || users.length === 0) {
+			return errorHandler({ res, err: 'No users found to update attendance for.', statusCode: 400 })
+		}
+
+		const result = await updateBulkAttendance(users, karykarmId)
+
+		if (!result.success) {
+			return errorHandler({
+				res,
+				data: result.missingUsers,
+				err: result.message,
+				statusCode: 502,
+			})
+		}
+
+		return responseHandler({
+			res,
+			data: result.missingUsers,
+			msg: `users attendance updated successfully.`,
+		})
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })

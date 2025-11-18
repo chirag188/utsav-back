@@ -28,6 +28,7 @@ import {
 	getSamparkVrundApi,
 	updateSamparkVrundApi,
 	getUpcomingBirthdayListAPI,
+	bulkAttendanceApi,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -56,6 +57,7 @@ router.get('/getFollowUpData', getFollowUpDataApi)
 router.get('/getProfileData', getProfileDataApi)
 router.put('/updateFollowUp', updateFollowUpApi)
 router.put('/changeAttendance', changeAttendanceApi)
+router.post('/bulkAttendance', bulkAttendanceApi)
 router.get('/getAllSamparkKarykar', getAllSamparkKarykarAPI)
 router.get('/getAllUser', getAllUserAPI)
 router.get('/getAttendanceReport', getAttendanceReportAPI)

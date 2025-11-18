@@ -1145,35 +1145,77 @@ export const updateFollowUp = async (payload: any) => {
 
 export const changeAttendance = async (payload: any) => {
 	try {
-		const isExist = await FollowUp.findOne({
+		const followUp = await FollowUp.findOne({
 			where: { userId: payload.userId, karykarmId: payload.karykarmId },
 		})
-		if (!isExist) return false
-		try {
-			const followUp = await FollowUp.findOne({
-				where: { userId: payload.userId, karykarmId: payload.karykarmId },
-			})
-				.then((result) => {
-					result!.update(
-						{
-							attendance: payload.attendance,
-							appattendance: payload.appattendance,
-						},
-						{
-							where: { userId: payload.userId, karykarmId: payload.karykarmId },
-						}
-					)
-				})
-				.catch((error) => {
-					Logger.error(error)
-					return null
-				})
-			return followUp
-		} catch (error) {
-			Logger.error(error)
-		}
+
+		if (!followUp) return false
+		await followUp.update({
+			attendance: payload.attendance,
+			appattendance: payload.appattendance,
+		})
+
+		return followUp
+	} catch (error: any) {
+		Logger.error(`Error updating attendance: ${error?.message}`)
+		throw error
+	}
+}
+
+export const updateBulkAttendance = async (usersList: string[], karykarmId: string) => {
+	try {
+		if (!usersList || usersList.length === 0)
+			return { success: false, missingUsers: [], message: 'No users provided.' }
+
+		const names = usersList.map((user) => {
+			const [firstName, lastName] = user.trim().split(' ')
+			return { firstName, lastName }
+		})
+
+		const users = await User.findAll({
+			where: {
+				[Op.or]: names.map((n) => ({
+					firstname: { [Op.iLike]: n.firstName },
+					lastname: { [Op.iLike]: n.lastName },
+				})),
+			},
+			attributes: ['id', 'firstname', 'lastname'],
+		})
+
+		if (users.length === 0)
+			return { success: false, missingUsers: usersList, message: 'No matching users found.' }
+
+		const userIds = users.map((u) => u?.get('id'))
+
+		const followUps = await FollowUp.findAll({
+			where: {
+				userId: userIds,
+				karykarmId,
+			},
+			attributes: ['userId'],
+		})
+
+		const foundUserNames = followUps.map((f) => {
+			const user = users.find((u) => u?.get('id') === f?.get('userId'))
+			return `${user?.get('firstname')} ${user?.get('lastname')}`?.toLowerCase()
+		})
+
+		const missingUsers = usersList.filter((u) => !foundUserNames.includes(u?.toLowerCase()))
+
+		await FollowUp.update(
+			{ attendance: true, appattendance: true },
+			{
+				where: {
+					userId: userIds,
+					attendance: false,
+					karykarmId,
+				},
+			}
+		)
+
+		return { success: true, missingUsers: missingUsers || [] }
 	} catch (error) {
-		Logger.error(error)
+		Logger.error('Error in updateBulkAttendance:', error)
 		throw error
 	}
 }
