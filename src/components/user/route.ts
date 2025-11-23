@@ -29,6 +29,10 @@ import {
 	updateSamparkVrundApi,
 	getUpcomingBirthdayListAPI,
 	bulkAttendanceApi,
+	createSocApi,
+	getCustomSocApi,
+	deleteSocApi,
+	migrateSocApi,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -65,4 +69,12 @@ router.get('/getAllKarykarm', getAllKarykarmAPI)
 router.get('/genrateKarykarmReport', genrateKarykarmReportAPI)
 router.get('/getAllSeva', getAllSevaAPI)
 router.get('/getUpcomingBirthdayList', getUpcomingBirthdayListAPI)
+
+// society routes can be added here
+router.get('/society', getCustomSocApi)
+router.post('/society', createSocApi)
+router.put('/society', createSocApi)
+router.delete('/society', deleteSocApi)
+router.get('/migrateSoc', migrateSocApi)
+
 export default router

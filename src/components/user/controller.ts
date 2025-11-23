@@ -17,9 +17,11 @@ import {
 	createKarykarm,
 	createSamparkVrund,
 	createSatsangProfile,
+	createSoc,
 	createUser,
 	deleteKarykarm,
 	deleteSamparkVrund,
+	deleteSoc,
 	deleteUser,
 	followUpInitiate,
 	genrateKarykarmReport,
@@ -27,6 +29,7 @@ import {
 	getAllSamparkKarykar,
 	getAllSamparkVrund,
 	getAllSeva,
+	getAllSocList,
 	getAllUser,
 	getAttendanceList,
 	getAttendanceReport,
@@ -36,12 +39,14 @@ import {
 	getSamparkVrund,
 	getUpcomingBirthdayList,
 	getUserService,
+	migrateSocieties,
 	satsangData,
 	updateBulkAttendance,
 	updateFollowUp,
 	updateKarykarm,
 	updateSamparkVrund,
 	updateSatsangProfile,
+	updateSoc,
 	updateUser,
 	uploadImage,
 	verifyPassword,
@@ -49,6 +54,7 @@ import {
 import Messages from '@helpers/messages'
 import { generateToken } from '@helpers/jwt'
 import { JWTPayload } from '@interfaces/jwtPayload'
+import SocTable from './soc.model'
 
 export const createUserApi = async (req: Request, res: Response) => {
 	try {
@@ -89,43 +95,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			district,
 			taluka,
 			village,
-		}: {
-			// username: string
-			firstname: string
-			middlename: string
-			lastname: string
-			mobileNumber: number
-			mobileUser: string
-			userLevel: string
-			houseNumber: string
-			socName: string
-			nearBy: string
-			area: string
-			married: boolean
-			education: string
-			mandal: string
-			email: string
-			seva: string
-			sevaIntrest: string
-			password: string
-			userType: string
-			profilePic: string
-			DOB: Date
-			gender: string
-			id: string
-			app: boolean
-			appId: string
-			samparkVrund: string
-			job: string
-			business: string
-			occupation: string
-			occupationFiled: string
-			fatherOccupation: string
-			fatherOccupationFiled: string
-			fatherMobileNumber: number
-			district: string
-			taluka: string
-			village: string
+			socId,
 		} = req.body
 
 		const userObject: UserInterface = {
@@ -170,6 +140,7 @@ export const createUserApi = async (req: Request, res: Response) => {
 			district,
 			taluka,
 			village,
+			socId,
 		}
 
 		const validator = await registerRequest(userObject)
@@ -373,33 +344,34 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 		const {
 			karykar1profileId,
 			karykar2profileId,
-			socs,
+			socs, // now treated as array of SocTable IDs
 			vrundName,
 			mandal,
-		}: {
-			karykar1profileId: string
-			karykar2profileId: string
-			socs: string
-			vrundName: string
-			mandal: string
 		} = req.body
 
+		const id = uuid()
+
+		// Normalize socs to array
+		const socIds = typeof socs === 'string' ? [socs] : socs ?? []
+
 		const samparkVrundObject: SamparkVrundInterface = {
+			id,
 			karykar1profileId,
-			karykar2profileId: karykar2profileId ? karykar2profileId : null,
-			socs,
+			karykar2profileId: karykar2profileId || null,
 			vrundName,
-			id: uuid(),
 			mandal,
 		}
 
+		// Validate karykars
 		const karykar1 = karykar1profileId
 			? await getProfileData({ id: karykar1profileId, userType: 'karykar' })
 			: null
+
 		const karykar2 = karykar2profileId
 			? await getProfileData({ id: karykar2profileId, userType: 'karykar' })
 			: null
-		if ((karykar1profileId && karykar1 === null) || (karykar2profileId && karykar2 === null)) {
+
+		if ((karykar1profileId && !karykar1) || (karykar2profileId && !karykar2)) {
 			return errorHandler({
 				res,
 				statusCode: 400,
@@ -407,57 +379,40 @@ export const createSamparkVrundApi = async (req: Request, res: Response) => {
 			})
 		}
 
-		// const validator = await registerRequest(samparkVrundObject)
-
-		// if (validator.error) {
-		// 	return errorHandler({ res, err: validator.message })
-		// }
-
-		// if (id) {
-		// 	const user = await updateUser(samparkVrundObject)
-		// 	if (user === false) {
-		// 		return errorHandler({
-		// 			res,
-		// 			statusCode: 409,
-		// 			err: Messages.NOT_EMAIL_EXIST,
-		// 		})
-		// 	}
-		// 	return responseHandler({
-		// 		res,
-		// 		status: 200,
-		// 		msg: Messages.YUVAK_UPDATED_SUCCESS,
-		// 		data: { user },
-		// 	})
-		// } else {
+		// CREATE VRUND
 		const samparkVrund = await createSamparkVrund(samparkVrundObject)
-		if (samparkVrund === false) {
+		if (!samparkVrund) {
 			return errorHandler({
 				res,
 				statusCode: 409,
 				err: "Can't Create Group",
 			})
 		}
-		// Karykar 1
-		if (karykar1profileId && karykar1) {
-			await updateUser({
-				...karykar1?.dataValues,
-				samparkVrund: samparkVrund?.dataValues?.vrundName,
-			})
+
+		// LINK SOCIETIES TO VRUND
+		if (socIds.length) {
+			await SocTable.update({ samparkVrundId: samparkVrund.id }, { where: { id: socIds } })
 		}
-		// Karykar 2
-		if (karykar2profileId && karykar2) {
+
+		// Update karykars
+		if (karykar1)
 			await updateUser({
-				...karykar2?.dataValues,
-				samparkVrund: samparkVrund?.dataValues?.vrundName,
+				...karykar1.dataValues,
+				samparkVrund: samparkVrund.vrundName,
 			})
-		}
+
+		if (karykar2)
+			await updateUser({
+				...karykar2.dataValues,
+				samparkVrund: samparkVrund.vrundName,
+			})
+
 		return responseHandler({
 			res,
 			status: 200,
 			msg: Messages.SAMPARK_VRUND_SUCCESS,
 			data: { samparkVrund },
 		})
-		// }
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -490,40 +445,27 @@ export const getSamparkVrundApi = async (req: Request, res: Response) => {
 
 export const updateSamparkVrundApi = async (req: Request, res: Response) => {
 	try {
-		const {
-			id,
-			karykar1profileId,
-			karykar2profileId,
-			socs,
-			vrundName,
-			mandal,
-			oldVrundName,
-		}: {
-			id: string
-			karykar1profileId: string
-			karykar2profileId: string
-			socs: string
-			vrundName: string
-			mandal: string
-			oldVrundName: string
-		} = req.body
+		const { id, karykar1profileId, karykar2profileId, socs, mandal } = req.body
 
-		const samparkVrundObject: SamparkVrundInterface = {
+		const socIds = typeof socs === 'string' ? socs?.split(',') : socs ?? []
+
+		const samparkVrundObject = {
 			id,
 			karykar1profileId,
-			karykar2profileId: karykar2profileId ? karykar2profileId : null,
-			socs,
-			vrundName,
+			karykar2profileId: karykar2profileId || null,
 			mandal,
 		}
 
+		// Validate karykars
 		const karykar1 = karykar1profileId
 			? await getProfileData({ id: karykar1profileId, userType: 'karykar' })
 			: null
+
 		const karykar2 = karykar2profileId
 			? await getProfileData({ id: karykar2profileId, userType: 'karykar' })
 			: null
-		if ((karykar1profileId && karykar1 === null) || (karykar2profileId && karykar2 === null)) {
+
+		if ((karykar1profileId && !karykar1) || (karykar2profileId && !karykar2)) {
 			return errorHandler({
 				res,
 				statusCode: 400,
@@ -531,36 +473,35 @@ export const updateSamparkVrundApi = async (req: Request, res: Response) => {
 			})
 		}
 
-		const samparkVrund = await updateSamparkVrund(samparkVrundObject, mandal, oldVrundName)
+		// UPDATE VRUND
+		const updated = await updateSamparkVrund(samparkVrundObject, mandal)
 
-		// if (samparkVrund) {
-		// 	return errorHandler({
-		// 		res,
-		// 		statusCode: 409,
-		// 		err: Messages.EMAIL_EXIST,
-		// 	})
-		// }
-		// Karykar 1
-		if (karykar1profileId && karykar1) {
-			await updateUser({
-				...karykar1?.dataValues,
-				samparkVrund: vrundName,
-			})
+		// UPDATE SOCIETIES (clear old → assign new)
+		await SocTable.update({ samparkVrundId: null }, { where: { samparkVrundId: id } })
+
+		if (socIds.length) {
+			await SocTable.update({ samparkVrundId: id }, { where: { id: socIds } })
 		}
-		// Karykar 2
-		if (karykar2profileId && karykar2) {
+
+		// Update karykars
+		if (karykar1)
 			await updateUser({
-				...karykar2?.dataValues,
-				samparkVrund: vrundName,
+				...karykar1.dataValues,
+				// samparkVrund: vrundName,
 			})
-		}
+
+		if (karykar2)
+			await updateUser({
+				...karykar2.dataValues,
+				// samparkVrund: vrundName,
+			})
+
 		return responseHandler({
 			res,
 			status: 200,
 			msg: Messages.SAMPARK_VRUND_SUCCESS,
-			data: { samparkVrund },
+			data: { updated },
 		})
-		// }
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -1027,43 +968,29 @@ export const loginApi = async (req: Request, res: Response) => {
 export const getAllSamparkVrundAPI = async (req: Request, res: Response) => {
 	try {
 		const { mandal = '' } = req.query
+
 		const samparkVrundList = await getAllSamparkVrund(mandal)
-		if (samparkVrundList === null) {
+
+		if (!samparkVrundList) {
 			return errorHandler({
 				res,
-				err: Messages.USER_NOT_FOUND,
+				err: 'Groups Not Found',
 				statusCode: 502,
 			})
 		}
 
-		// const data = {
-		// 	companyName: user.companyName,
-		// 	companyRegistrationNumber: user.companyRegistrationNumber,
-		// 	companyWebsite: user.companyWebsite,
-		// 	email: user.email,
-		// 	country: user.country,
-		// 	state: user.state,
-		// 	postalCode: user.postalCode,
-		// 	mobileNumber: user.mobileNumber,
-		// 	profilePic: user.profilePic,
-		// 	mobileNoVerified: user.mobileNoVerified,
-		// 	kybStatus: user.kybStatus,
-		// 	agreementSigned: user.agreementSigned,
-		// 	userType: user.userType,
-		// 	blockchainWalletAddress: user.blockchainWalletAddress,
-		// 	agreementSentByAdmin: user.agreementSentByAdmin,
-		// 	ERTCADocSigned: user.ERTCADocSigned,
-		// 	userAgreement: user.userAgreement,
-		// 	kybAttempt: user.kybAttempt,
-		// 	ERTCADocID: user.ERTCADocID,
-		// 	agreementDocId: user.agreementDocId,
-		// 	countryCode: user.countryCode,
-		// }
-
-		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: samparkVrundList })
+		return responseHandler({
+			res,
+			msg: 'Groups Retrieved Successfully',
+			data: samparkVrundList,
+		})
 	} catch (error) {
 		Logger.error(error)
-		return errorHandler({ res, statusCode: 400, data: { error } })
+		return errorHandler({
+			res,
+			statusCode: 400,
+			data: { error },
+		})
 	}
 }
 
@@ -1250,7 +1177,7 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 			limit = 10,
 			searchTxt = '',
 			orderBy = 'createdAt',
-			orderType = 'DESC',
+			orderType = 'ASC',
 			karykarmId = '',
 			followUpStart = '',
 		} = req.query
@@ -1287,12 +1214,12 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 		if (followUpList === null) {
 			return errorHandler({
 				res,
-				err: Messages.USER_NOT_FOUND,
+				err: "Follow Up List Not Found",
 				statusCode: 502,
 			})
 		}
 
-		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: followUpList })
+		return responseHandler({ res, msg: "Follow Up list found", data: followUpList })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -1372,12 +1299,12 @@ export const getFollowUpDataApi = async (req: Request, res: Response) => {
 		if (followUpList === null) {
 			return errorHandler({
 				res,
-				err: Messages.USER_NOT_FOUND,
+				err: "User Follow Up Data Not Found",
 				statusCode: 502,
 			})
 		}
 
-		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: followUpList })
+		return responseHandler({ res, msg: "Success", data: followUpList })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
@@ -1482,5 +1409,117 @@ export const bulkAttendanceApi = async (req: Request, res: Response) => {
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const createSocApi = async (req: Request, res: Response) => {
+	try {
+		const { id, socName, area } = req.body
+
+		const socObject = {
+			id: id ? id : uuid(),
+			socName,
+			area,
+		}
+
+		if (id) {
+			const soc = await updateSoc(socObject)
+			if (soc === false) {
+				return errorHandler({
+					res,
+					statusCode: 409,
+					err: 'Society Not Updated',
+				})
+			}
+			return responseHandler({
+				res,
+				status: 200,
+				msg: 'Society Updated Successfully',
+				data: { soc },
+			})
+		} else {
+			const soc = await createSoc(socObject)
+			if (soc === false) {
+				return errorHandler({
+					res,
+					statusCode: 409,
+					err: 'Society Not Created',
+				})
+			}
+			return responseHandler({
+				res,
+				status: 200,
+				msg: 'Society Created Successfully',
+				data: { soc },
+			})
+		}
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const getCustomSocApi = async (req: Request, res: Response) => {
+	try {
+		const { id = '' } = req.query
+
+		const socList = await getAllSocList(id)
+		if (socList === null) {
+			return errorHandler({
+				res,
+				statusCode: 409,
+				err: 'Society List Not Found',
+			})
+		}
+		return responseHandler({
+			res,
+			status: 200,
+			msg: 'Society List Found Successfully',
+			data: { socList },
+		})
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const deleteSocApi = async (req: Request, res: Response) => {
+	try {
+		const { id = '' } = req.query
+		if (id) {
+			const soc = await deleteSoc(id)
+			if (soc === false) {
+				return errorHandler({
+					res,
+					statusCode: 409,
+					err: 'Society Not Found',
+				})
+			}
+			return responseHandler({
+				res,
+				status: 200,
+				msg: 'Society deleted Successfully',
+				data: { soc },
+			})
+		} else {
+			return errorHandler({
+				res,
+				statusCode: 409,
+				err: 'Society Not Found',
+			})
+		}
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const migrateSocApi = async (req: Request, res: Response) => {
+	try {
+		const result = await migrateSocieties()
+		return res.status(200).json(result)
+	} catch (error: any) {
+		console.error('Migration Error:', error)
+		return res.status(500).json({ error: error.message })
 	}
 }

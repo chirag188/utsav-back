@@ -46,8 +46,8 @@ class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	how!: string
 	@Column
 	remark!: string
-	@Column
-	samparkVrund!: string
+	// @Column
+	// samparkVrund!: string
 	@BelongsTo(() => User, 'userId')
 	userData!: User[]
 	@BelongsTo(() => Karykarm, 'karykarmId')

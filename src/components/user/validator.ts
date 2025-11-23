@@ -41,6 +41,7 @@ export const registerRequest = async (data: Object) => {
 		district: Joi.string().allow(null, ''),
 		taluka: Joi.string().allow(null, ''),
 		village: Joi.string().allow(null, ''),
+		socId: Joi.string().allow(null, ''),
 	})
 
 	const validate = Schema.validate(data)

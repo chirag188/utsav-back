@@ -1,9 +1,19 @@
 import { Optional } from 'sequelize'
 
-import { Table, Model, Column, DataType, AfterCreate, AfterUpdate, ForeignKey, BelongsToMany, HasMany } from 'sequelize-typescript'
+import {
+	Table,
+	Model,
+	Column,
+	DataType,
+	AfterCreate,
+	AfterUpdate,
+	ForeignKey,
+	BelongsTo,
+} from 'sequelize-typescript'
 
 import { UserInterface } from '@interfaces/user'
 import { afterCreateHooks, afterUpdateHooks } from './hooks'
+import SocTable from './soc.model'
 
 interface UserAttributes extends Optional<UserInterface, 'id'> {}
 
@@ -57,8 +67,8 @@ class User extends Model<UserInterface, UserAttributes> {
 	password!: string
 	@Column
 	userType!: string
-	@Column
-	samparkVrund!: string
+	// @Column
+	// samparkVrund!: string
 	@Column
 	token!: string
 	@Column({ defaultValue: '' })
@@ -85,6 +95,17 @@ class User extends Model<UserInterface, UserAttributes> {
 	village!: string
 	@Column({ type: DataType.ARRAY(DataType.STRING) })
 	sevaList!: string[]
+
+	// Add society relation
+	@ForeignKey(() => SocTable)
+	@Column({
+		type: DataType.STRING, // <--- ADD THIS
+		allowNull: true,
+	})
+	socId!: string | null
+
+	@BelongsTo(() => SocTable)
+	society!: SocTable
 
 	// Hooks
 	@AfterCreate

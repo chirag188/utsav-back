@@ -38,6 +38,7 @@ export interface UserInterface {
 	district?: string
 	taluka?: string
 	village?: string
+	socId?: string | null
 }
 
 export interface satsangProfileInterface {
