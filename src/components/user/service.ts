@@ -338,11 +338,39 @@ export const getUserService = async (filter: Partial<UserInterface>) => {
 
 export const getAllSamparkVrund = async (mandal: string | any) => {
 	try {
-		// 1️⃣ Get all SamparkVrund with related societies and karykars
+		// Fetch Sampark Vrund with relations
 		const samparkVrundList = await SamparkVrund.findAll({
 			include: [
-				{ model: User, as: 'karykar1profile', required: false },
-				{ model: User, as: 'karykar2profile', required: false },
+				{
+					model: User,
+					as: 'karykar1profile',
+					attributes: [
+						'email',
+						'firstname',
+						'lastname',
+						'mobileNumber',
+						'profilePic',
+						'socId',
+						'socName',
+						'userType',
+					],
+					required: false,
+				},
+				{
+					model: User,
+					as: 'karykar2profile',
+					attributes: [
+						'email',
+						'firstname',
+						'lastname',
+						'mobileNumber',
+						'profilePic',
+						'socId',
+						'socName',
+						'userType',
+					],
+					required: false,
+				},
 				{
 					model: SocTable,
 					as: 'societies',
@@ -353,14 +381,16 @@ export const getAllSamparkVrund = async (mandal: string | any) => {
 			order: [['vrundName', 'ASC']],
 		})
 
-		if (!samparkVrundList) return null
+		if (!samparkVrundList?.length) return []
 
-		const samparkVrundJSON = samparkVrundList.map((v) => v.toJSON())
+		const vrundJSON = samparkVrundList.map((v) => v.toJSON())
 
-		// 2️⃣ Collect all society IDs for counting users and fetching user list
-		const allSocietyIds = samparkVrundJSON.flatMap((v) => (v.societies || []).map((s) => s.id))
+		// Collect all societies
+		const allSocietyIds = vrundJSON.flatMap((v) => (v.societies || []).map((s) => s.id))
 
-		// 3️⃣ Get user counts per society in ONE query
+		if (!allSocietyIds.length) return vrundJSON
+
+		// User counts grouped by society
 		const userCounts = await User.findAll({
 			where: {
 				socId: { [Op.in]: allSocietyIds },
@@ -372,41 +402,51 @@ export const getAllSamparkVrund = async (mandal: string | any) => {
 			raw: true,
 		})
 
-		const countsMap = Object.fromEntries(
-			userCounts.map((uc: any) => [uc.socId, Number(uc.userCount)])
-		)
+		const countsMap = Object.fromEntries(userCounts.map((i: any) => [i.socId, Number(i.userCount)]))
 
-		// 4️⃣ Get all users belonging to these societies in ONE query
-		const userList = await User.findAll({
+		// Fetch all users from all these societies
+		const userList = (await User.findAll({
+			attributes: [
+				'email',
+				'firstname',
+				'lastname',
+				'mobileNumber',
+				'profilePic',
+				'socId',
+				'socName',
+				'userType',
+			],
 			where: {
 				socId: { [Op.in]: allSocietyIds },
 				userType: 'yuvak',
 				active: true,
 			},
 			raw: true,
-		})
+		})) as any
 
-		// 5️⃣ Attach counts and user list
-		const result = samparkVrundJSON.map((vrund) => {
-			const societiesWithCount = (vrund.societies || []).map((soc) => ({
+		// Group users by societyId for fast lookup
+		const usersBySocId: Record<number, any[]> = {}
+		for (const user of userList) {
+			if (!usersBySocId[user.socId]) usersBySocId[user.socId] = []
+			usersBySocId[user.socId].push(user)
+		}
+
+		// Final Assembly
+		const result = vrundJSON.map((vrund) => {
+			const societies = (vrund.societies || []).map((soc) => ({
 				...soc,
 				userCount: countsMap[soc.id] || 0,
 			}))
 
-			// Users belonging to any society of this vrund
-			const users = userList.filter((u) => societiesWithCount.some((s) => s.id === u.socId))
+			const users = societies.flatMap((s) => usersBySocId[s.id] || [])
 
-			return {
-				...vrund,
-				societies: societiesWithCount,
-				userList: users,
-			}
+			return { ...vrund, societies, userList: users }
 		})
 
 		return result
 	} catch (err) {
 		Logger.error(err)
-		return null
+		return []
 	}
 }
 
