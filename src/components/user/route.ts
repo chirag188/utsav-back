@@ -23,16 +23,17 @@ import {
 	deleteKarykarmApi,
 	getAllSevaAPI,
 	getAttendanceReportAPI,
-	genrateKarykarmReportAPI,
+	// genrateKarykarmReportAPI,
 	deleteSamparkVrundApi,
 	getSamparkVrundApi,
-	updateSamparkVrundApi,
+	// updateSamparkVrundApi,
 	getUpcomingBirthdayListAPI,
 	bulkAttendanceApi,
 	createSocApi,
 	getCustomSocApi,
 	deleteSocApi,
 	migrateSocApi,
+	getKarykarmAPI,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -46,7 +47,7 @@ router.put('/updateUser', createUserApi)
 router.post('/uploadImage', uploadImageApi)
 router.put('/updateSatsangProfile', updateSatsangProfileApi)
 router.post('/createSamparkVrund', createSamparkVrundApi)
-router.post('/updateSamparkVrund', updateSamparkVrundApi)
+// router.post('/upd/ateSamparkVrund', updateSamparkVrundApi)
 router.get('/getSamparkVrund', getSamparkVrundApi)
 router.post('/deleteSamparkVrund', deleteSamparkVrundApi)
 router.get('/getAllSamparkVrund', getAllSamparkVrundAPI)
@@ -66,7 +67,8 @@ router.get('/getAllSamparkKarykar', getAllSamparkKarykarAPI)
 router.get('/getAllUser', getAllUserAPI)
 router.get('/getAttendanceReport', getAttendanceReportAPI)
 router.get('/getAllKarykarm', getAllKarykarmAPI)
-router.get('/genrateKarykarmReport', genrateKarykarmReportAPI)
+router.get('/getKarykarm', getKarykarmAPI)
+// router.get('/genrateKarykarmReport', genrateKarykarmReportAPI)
 router.get('/getAllSeva', getAllSevaAPI)
 router.get('/getUpcomingBirthdayList', getUpcomingBirthdayListAPI)
 

@@ -1,16 +1,11 @@
 import bcrypt from 'bcrypt'
 import { v4 as uuid } from 'uuid'
 import { Logger } from '@config/logger'
-import {
-	KarykarmInterface,
-	SamparkVrundInterface,
-	UserInterface,
-	satsangProfileInterface,
-} from '@interfaces/user'
+import { KarykarmInterface, UserInterface, satsangProfileInterface } from '@interfaces/user'
 import User from '@user/user.model'
 import SatsangProfile from '@user/SatsangProfile.model'
 import SamparkVrund from '@user/SamparkVrund.model'
-import { col, fn, literal, Op, Sequelize, where } from 'sequelize'
+import { col, fn, literal, Op, Sequelize, Transaction, where } from 'sequelize'
 import Karykarm from './karykarm.model'
 import FollowUp from './followUp.model'
 import uploadImageToS3 from '@helpers/uploadFile'
@@ -19,13 +14,43 @@ import SevaAllocated from './SevaAllocated.model'
 import moment from 'moment'
 import SocTable from './soc.model'
 
-export const createUser = async (payload: UserInterface) => {
+const USER_PUBLIC_FIELDS = [
+	'email',
+	'firstname',
+	'lastname',
+	'mobileNumber',
+	'profilePic',
+	'socId',
+	'socName',
+	'userType',
+	'id',
+	'active',
+	'DOB',
+]
+
+const upsert = async <T>(Model: any, findWhere: object, payload: T) => {
+	const existing = await Model.findOne({ where: findWhere })
+	if (existing) return existing.update(payload)
+	return Model.create({ ...payload, id: uuid() })
+}
+
+const safeDelete = async (Model: any, id: string, deletePayload?: object) => {
+	const entity = await Model.findOne({ where: { id } })
+	if (!entity) return false
+	if (deletePayload) return entity.update(deletePayload)
+	return entity.destroy()
+}
+
+export const upsertUser = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { mobileNumber: payload.mobileNumber } })
-		if (isExist) return false
-		const user = await User.create(payload)
-		if (user) return 'User Created Successfully'
-		return 'Something went wrong'
+		if (payload.socId === '') {
+			payload.socId = null
+		}
+		return upsert(
+			User,
+			payload.id ? { id: payload.id } : { mobileNumber: payload.mobileNumber },
+			payload
+		)
 	} catch (error) {
 		Logger.error(error)
 		throw error
@@ -38,281 +63,174 @@ export const uploadImage = async (payload: any) => {
 		return location
 	} catch (error) {
 		return false
-		Logger.error(error)
-	}
-}
-
-export const updateUser = async (payload: UserInterface) => {
-	try {
-		// Check if user exists
-		const user = await User.findOne({
-			where: { id: payload.id },
-			attributes: { exclude: ['password'] },
-		})
-
-		if (!user) return false
-
-		// Update user
-		await user.update(payload)
-
-		return user
-	} catch (error) {
-		Logger.error(error)
-		throw error
 	}
 }
 
 export const assignSamparkKarykar = async (payload: UserInterface) => {
 	try {
-		const isExist = await User.findOne({ where: { mobileNumber: payload.id } })
-		if (!isExist) return false
-		try {
-			const user = await User.findOne({
-				where: {
-					mobileNumber: payload.id,
-					[Op.not]: {
-						userType: 'superadmin',
-					},
-				},
-				attributes: { exclude: ['password'] },
-			})
-				.then((result) => {
-					result!.update(
-						{
-							samparkVrund: payload.samparkVrund,
-							active: payload?.active || false,
-							deleteReason: payload.deleteReason || '',
-							firstname: payload.firstname || '',
-							middlename: payload.middlename || '',
-							lastname: payload.lastname || '',
-							houseNumber: payload.houseNumber || '',
-							socName: payload.socName || '',
-							nearBy: payload.nearBy || '',
-							area: payload.area || '',
-						},
-						{
-							where: {
-								mobileNumber: payload.id,
-							},
-						}
-					)
-				})
-				.catch((error) => {
-					Logger.error(error)
-					return null
-				})
-			return user
-		} catch (error) {
-			Logger.error(error)
-		}
-	} catch (error) {
-		Logger.error(error)
-		throw error
-	}
-}
-
-export const deleteUser = async (payload: UserInterface) => {
-	try {
-		const isExist = await User.findOne({ where: { id: payload.id } })
-		if (!isExist) return false
-		try {
-			const user = await User.findOne({
-				where: {
-					id: payload.id,
-					[Op.not]: {
-						userType: 'superadmin',
-					},
-				},
-				attributes: { exclude: ['password'] },
-			})
-				.then((result) => {
-					result!.update(
-						{
-							active: payload?.active || false,
-							deleteReason: payload.deleteReason,
-						},
-						{
-							where: {
-								id: payload.id,
-							},
-						}
-					)
-				})
-				.catch((error) => {
-					Logger.error(error)
-					return null
-				})
-			return user
-		} catch (error) {
-			Logger.error(error)
-		}
-	} catch (error) {
-		Logger.error(error)
-		throw error
-	}
-}
-
-export const createSatsangProfile = async (payload: satsangProfileInterface) => {
-	try {
-		const isExist = await SatsangProfile.findOne({ where: { userId: payload.userId } })
-		if (isExist) return false
-		const satsangProfile = await SatsangProfile.create(payload)
-		return satsangProfile
-	} catch (error) {
-		Logger.error(error)
-		throw error
-	}
-}
-
-export const updateSatsangProfile = async (payload: satsangProfileInterface) => {
-	try {
-		const satsangProfile = await SatsangProfile.findOne({
+		// Find the user by mobileNumber, excluding superadmin
+		const user = await User.findOne({
 			where: {
-				userId: payload.userId,
+				mobileNumber: payload.id,
+				[Op.not]: { userType: 'superadmin' },
 			},
+			attributes: { exclude: ['password'] },
 		})
-			.then((result) => {
-				result!.update(
-					{
-						...payload,
-					},
-					{
-						where: {
-							userId: payload.userId,
-						},
-					}
-				)
-			})
-			.catch((error) => {
-				Logger.error(error)
-				return null
-			})
-		return satsangProfile
+
+		if (!user) return false
+
+		// Update user fields
+		const updatedUser = await user.update({
+			samparkVrund: payload.samparkVrund,
+			active: payload.active ?? false,
+			deleteReason: payload.deleteReason ?? '',
+			firstname: payload.firstname ?? '',
+			middlename: payload.middlename ?? '',
+			lastname: payload.lastname ?? '',
+			houseNumber: payload.houseNumber ?? '',
+			socName: payload.socName ?? '',
+			nearBy: payload.nearBy ?? '',
+			area: payload.area ?? '',
+		})
+
+		return updatedUser
 	} catch (error) {
 		Logger.error(error)
+		throw error
 	}
 }
 
-export const createSamparkVrund = async (payload: SamparkVrundInterface) => {
+export const deleteUser = async (payload: any) => {
 	try {
-		const isExist = await SamparkVrund.findOne({
+		// Find the user by ID, excluding superadmin
+		const user = await User.findOne({
 			where: {
+				id: payload.id,
+				[Op.not]: { userType: 'superadmin' },
+			},
+			attributes: { exclude: ['password'] },
+		})
+
+		if (!user) return false
+
+		// Update user to mark as deleted
+		const updatedUser = await user.update({
+			active: payload?.active ?? false,
+			deleteReason: payload.deleteReason ?? '',
+		})
+
+		return updatedUser
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const upsertSatsangProfile = async (payload: satsangProfileInterface) => {
+	try {
+		// Find existing profile
+		const profile = await SatsangProfile.findOne({ where: { userId: payload.userId } })
+
+		if (profile) {
+			// Update existing profile
+			const updatedProfile = await profile.update({ ...payload })
+			return updatedProfile
+		} else {
+			// Create new profile
+			const newProfile = await SatsangProfile.create(payload)
+			return newProfile
+		}
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const upsertSamparkVrund = async (payload: any) => {
+	try {
+		// Find existing SamparkVrund based on mandal and karykar IDs
+		return await upsert(
+			SamparkVrund,
+			{
 				mandal: payload.mandal,
 				[Op.or]: [
 					{ karykar1profileId: payload.karykar1profileId },
 					payload.karykar2profileId && { karykar2profileId: payload.karykar2profileId },
 					payload.karykar2profileId && { karykar1profileId: payload.karykar2profileId },
 					{ karykar2profileId: payload.karykar1profileId },
-				],
+				].filter(Boolean), // remove false entries if karykar2profileId is undefined
 			},
-		})
-
-		if (isExist) return false
-
-		return await SamparkVrund.create(payload)
-	} catch (error) {
-		Logger.error(error)
-		throw error
-	}
-}
-
-export const updateSamparkVrund = async (payload: any, mandal: string) => {
-	try {
-		const result = await SamparkVrund.findOne({
-			where: { id: payload.id, mandal },
-		})
-
-		if (!result) return null
-
-		await result.update({ ...payload })
-
-		// const userList = await User.findAll({
+			payload
+		)
+		// const existing = await SamparkVrund.findOne({
 		// 	where: {
-		// 		active: true,
-		// 		samparkVrund: oldVrundName,
-		// 		mandal,
-		// 		[Op.not]: { userType: 'superadmin' },
+		// 		mandal: payload.mandal,
+		// 		[Op.or]: [
+		// 			{ karykar1profileId: payload.karykar1profileId },
+		// 			payload.karykar2profileId && { karykar2profileId: payload.karykar2profileId },
+		// 			payload.karykar2profileId && { karykar1profileId: payload.karykar2profileId },
+		// 			{ karykar2profileId: payload.karykar1profileId },
+		// 		].filter(Boolean), // remove false entries if karykar2profileId is undefined
 		// 	},
 		// })
 
-		// for (const item of userList) {
-		// 	await item.update({ samparkVrund: payload.vrundName })
+		// if (existing) {
+		// 	// Update existing record
+		// 	const updated = await existing.update({ ...payload })
+		// 	return updated
+		// } else {
+		// 	// Create new record
+		// 	const newRecord = await SamparkVrund.create(payload)
+		// 	return newRecord
 		// }
-
-		return result
 	} catch (error) {
 		Logger.error(error)
 		throw error
 	}
 }
 
-export const getSamparkVrund = async (id: string | any, mandal: string | any) => {
+export const getSamparkVrund = async (id: string, mandal: string) => {
 	try {
 		const vrund = await SamparkVrund.findOne({
 			where: { id, mandal },
 			include: [
 				{
 					model: SocTable,
+					as: 'societies',
 					attributes: ['id'],
-					as: 'societies', // must match @HasMany(() => SocTable)
 				},
 			],
 		})
-		if (!vrund) return false
-		return vrund
+
+		return vrund || false
 	} catch (error) {
 		Logger.error(error)
 		throw error
 	}
 }
 
-export const deleteSamparkVrund = async (id: string, samparkVrund: string, mandal: string) => {
+export const deleteSamparkVrund = async (id: string, mandal: string) => {
 	try {
-		const isExist = await SamparkVrund.findOne({ where: { karykar1profileId: id, mandal } })
-		if (!isExist) return false
-		await SamparkVrund.destroy({ where: { karykar1profileId: id, mandal } })
-		const userList = await User.findAll({
-			where: {
-				active: true,
-				samparkVrund,
-				mandal,
-				[Op.not]: {
-					userType: 'superadmin',
-				},
-			},
+		// Delete SamparkVrund if it exists
+		const deletedCount = await SamparkVrund.destroy({
+			where: { karykar1profileId: id, mandal },
 		})
-		try {
-			await Promise.all(
-				userList?.map(async (item) => {
-					const user = await User.findOne({
-						where: {
-							id: item?.dataValues?.id,
-							active: true,
-						},
-					})
-						.then((result) => {
-							result!.update(
-								{
-									samparkVrund: '',
-								},
-								{
-									where: {
-										id: item?.dataValues?.id,
-									},
-								}
-							)
-						})
-						.catch((error) => {
-							Logger.error(error)
-							return null
-						})
-					return user
-				})
-			)
-		} catch (error) {
-			Logger.error(error)
-		}
-		// await Karykarm.destroy({ where: { id } })
+		// If nothing was deleted, return false
+		if (deletedCount === 0) return false
+
+		// Update all users associated with this SamparkVrund in one query
+		// await User.update(
+		// 	{ samparkVrund: '' },
+		// 	{
+		// 		where: {
+		// 			active: true,
+		// 			samparkVrund,
+		// 			mandal,
+		// 			[Op.not]: { userType: 'superadmin' },
+		// 		},
+		// 	}
+		// )
+
 		return true
 	} catch (error) {
 		Logger.error(error)
@@ -326,142 +244,138 @@ export const getUserService = async (filter: Partial<UserInterface>) => {
 			where: filter,
 			raw: true,
 		})
-		if (!user) {
-			return null
+		if (!user) return null
+		// if (user?.dataValues?.userType === 'karykar') {
+		const samparkVrund = await SamparkVrund.findOne({
+			where: {
+				[Op.or]: [{ karykar1profileId: filter.id }, { karykar2profileId: filter.id }],
+			},
+		})
+		if (samparkVrund) {
+			return { ...user, samparkVrund: samparkVrund?.dataValues?.vrundName }
 		}
-		return user
+		// }
+		return user || null
 	} catch (err) {
 		Logger.error(err)
 		return null
 	}
 }
 
-export const getAllSamparkVrund = async (mandal: string | any) => {
+export const getAllSamparkVrund = async (mandal: string) => {
 	try {
-		// Fetch Sampark Vrund with relations
-		const samparkVrundList = await SamparkVrund.findAll({
-			include: [
-				{
-					model: User,
-					as: 'karykar1profile',
-					attributes: [
-						'email',
-						'firstname',
-						'lastname',
-						'mobileNumber',
-						'profilePic',
-						'socId',
-						'socName',
-						'userType',
-					],
-					required: false,
-				},
-				{
-					model: User,
-					as: 'karykar2profile',
-					attributes: [
-						'email',
-						'firstname',
-						'lastname',
-						'mobileNumber',
-						'profilePic',
-						'socId',
-						'socName',
-						'userType',
-					],
-					required: false,
-				},
-				{
-					model: SocTable,
-					as: 'societies',
-					required: false,
-				},
-			],
+		// Fetch vrunds + related users + societies
+		const vrunds = await SamparkVrund.findAll({
 			where: { mandal },
-			order: [['vrundName', 'ASC']],
-		})
-
-		if (!samparkVrundList?.length) return []
-
-		const vrundJSON = samparkVrundList.map((v) => v.toJSON())
-
-		// Collect all societies
-		const allSocietyIds = vrundJSON.flatMap((v) => (v.societies || []).map((s) => s.id))
-
-		if (!allSocietyIds.length) return vrundJSON
-
-		// User counts grouped by society
-		const userCounts = await User.findAll({
-			where: {
-				socId: { [Op.in]: allSocietyIds },
-				userType: 'yuvak',
-				active: true,
-			},
-			attributes: ['socId', [fn('COUNT', col('id')), 'userCount']],
-			group: ['socId'],
-			raw: true,
-		})
-
-		const countsMap = Object.fromEntries(userCounts.map((i: any) => [i.socId, Number(i.userCount)]))
-
-		// Fetch all users from all these societies
-		const userList = (await User.findAll({
-			attributes: [
-				'email',
-				'firstname',
-				'lastname',
-				'mobileNumber',
-				'profilePic',
-				'socId',
-				'socName',
-				'userType',
+			include: [
+				{ model: User, as: 'karykar1profile', attributes: USER_PUBLIC_FIELDS },
+				{ model: User, as: 'karykar2profile', attributes: USER_PUBLIC_FIELDS },
+				{ model: SocTable, as: 'societies' },
 			],
-			where: {
-				socId: { [Op.in]: allSocietyIds },
-				userType: 'yuvak',
-				active: true,
-			},
-			raw: true,
-		})) as any
+			order: [['vrundName', 'ASC']],
+			raw: false,
+		})
 
-		// Group users by societyId for fast lookup
-		const usersBySocId: Record<number, any[]> = {}
-		for (const user of userList) {
-			if (!usersBySocId[user.socId]) usersBySocId[user.socId] = []
-			usersBySocId[user.socId].push(user)
+		if (vrunds.length === 0) return []
+
+		// Convert to plain objects once
+		const vrundList = vrunds.map((v) => v.get({ plain: true }))
+
+		// Gather society IDs
+		const allSocIds = new Set<number>()
+		for (const v of vrundList) {
+			if (!v.societies) continue
+			for (const s of v.societies) allSocIds.add(s.id)
 		}
 
-		// Final Assembly
-		const result = vrundJSON.map((vrund) => {
-			const societies = (vrund.societies || []).map((soc) => ({
-				...soc,
-				userCount: countsMap[soc.id] || 0,
-			}))
+		// No societies? Return early.
+		if (allSocIds.size === 0) return vrundList
 
-			const users = societies.flatMap((s) => usersBySocId[s.id] || [])
+		const socIds = [...allSocIds]
 
-			return { ...vrund, societies, userList: users }
+		// Fetch all user-related data in 2 queries
+		const [userCounts, allUsers] = await Promise.all([
+			User.findAll({
+				where: { socId: { [Op.in]: socIds }, userType: 'yuvak', active: true },
+				attributes: ['socId', [fn('COUNT', col('id')), 'count']],
+				group: ['socId'],
+				raw: true,
+			}),
+
+			User.findAll({
+				where: {
+					socId: { [Op.in]: socIds },
+					userType: 'yuvak',
+					active: true,
+				},
+				attributes: USER_PUBLIC_FIELDS.concat(['socId', 'activeGroup']),
+				raw: true,
+			}),
+		])
+
+		/** Create lookup maps */
+		const countMap = new Map<number, number>()
+		for (const c of userCounts as any) {
+			countMap.set(c.socId, Number(c.count))
+		}
+
+		// Separate active-group users + normal users
+		const usersBySoc: Record<number, any[]> = {}
+		const activeGroupList: any[] = []
+
+		for (const u of allUsers as any) {
+			if (u.activeGroup) {
+				activeGroupList.push(u)
+			} else {
+				;(usersBySoc[u.socId] ||= []).push(u)
+			}
+		}
+
+		// Add "Active" vrund only once
+		vrundList.push({
+			vrundName: 'Active',
+			karykar1profileId: '',
+			societies: [],
+			userList: activeGroupList,
 		})
 
-		return result
+		// Build final output
+		return vrundList.map((v) => {
+			const societies =
+				v.societies?.map((s) => ({
+					...s,
+					userCount: countMap.get(s.id) || 0,
+				})) || []
+
+			// Build user list from societies
+			let userList: any[] = []
+			for (const s of societies) {
+				if (usersBySoc[s.id]) userList.push(...usersBySoc[s.id])
+			}
+
+			// fallback to vrund.userList (for Active vrund)
+			if (userList.length === 0 && v.userList) {
+				userList = v.userList
+			}
+
+			return { ...v, societies, userList }
+		})
 	} catch (err) {
 		Logger.error(err)
 		return []
 	}
 }
 
-export const getAllSamparkKarykar = async (mandal: string | any) => {
+export const getAllSamparkKarykar = async (mandal?: string) => {
 	try {
 		const karykarList = await User.findAndCountAll({
 			where: {
 				[Op.or]: [{ userType: 'admin' }, { userType: 'karykar' }],
-				...(mandal && { mandal }),
+				...(mandal ? { mandal } : {}),
 			},
 			attributes: { exclude: ['password'] },
 		})
-		if (!karykarList) {
-			return null
-		}
+
 		return karykarList
 	} catch (err) {
 		Logger.error(err)
@@ -469,33 +383,32 @@ export const getAllSamparkKarykar = async (mandal: string | any) => {
 	}
 }
 
-export const getUpcomingBirthdayList = async (mandal: string | any) => {
+export const getUpcomingBirthdayList = async (mandal?: string) => {
 	try {
 		const yuvakList = await User.findAll({
 			where: {
 				active: true,
-				...(mandal && { mandal }),
+				...(mandal ? { mandal } : {}),
 			},
-			attributes: ['id', 'firstname', 'lastname', 'mobileNumber', 'profilePic', 'DOB', 'active'],
+			attributes: USER_PUBLIC_FIELDS,
 			order: [['DOB', 'ASC']],
+			raw: true, // returns plain objects instead of model instances
 		})
-		if (!yuvakList) {
-			return null
-		}
+
+		if (!yuvakList.length) return []
 
 		const today = moment().startOf('day')
 		const nextWeek = moment().add(14, 'days').endOf('day')
-		return yuvakList?.filter((user) => {
-			if (user?.dataValues?.DOB) {
-				const dob = moment(user?.dataValues?.DOB).year(moment().year())
-				return dob >= today && dob <= nextWeek
-			} else {
-				return false
-			}
+
+		return yuvakList.filter((user) => {
+			if (!user.DOB) return false
+
+			const dobThisYear = moment(user.DOB).year(moment().year())
+			return dobThisYear.isBetween(today, nextWeek, undefined, '[]') // inclusive
 		})
 	} catch (err) {
 		Logger.error(err)
-		return null
+		return []
 	}
 }
 
@@ -505,10 +418,10 @@ export const getAllUser = async (
 	searchTxt: string,
 	orderBy: string,
 	orderType: string,
-	userType: string | any,
-	samparkVrund: string | any,
-	active: boolean | any,
-	mandal: string | any
+	userType?: string,
+	samparkVrund?: string,
+	active?: boolean,
+	mandal?: string
 ) => {
 	try {
 		// Base user filters
@@ -516,14 +429,16 @@ export const getAllUser = async (
 		if (active !== undefined) userWhere.active = active
 		if (userType) userWhere.userType = userType
 		if (mandal) userWhere.mandal = mandal
+		if (samparkVrund) {
+			userWhere.activeGroup = false
+			userWhere.userType = 'yuvak'
+		}
 
-		const isMobileSearch = /^\d+$/.test(searchTxt)
-
-		// Search text filter
+		// Search filter
 		if (searchTxt) {
-			if (isMobileSearch) {
-				delete userWhere.active
-			}
+			const isMobileSearch = /^\d+$/.test(searchTxt)
+			if (isMobileSearch) delete userWhere.active
+
 			userWhere[Op.or] = [
 				{ firstname: { [Op.iLike]: `%${searchTxt}%` } },
 				{ lastname: { [Op.iLike]: `%${searchTxt}%` } },
@@ -536,9 +451,7 @@ export const getAllUser = async (
 
 		// SamparkVrund filter
 		const samparkVrundWhere =
-			samparkVrund && samparkVrund !== 'NA' && samparkVrund !== ''
-				? { vrundName: samparkVrund }
-				: undefined
+			samparkVrund && samparkVrund !== 'NA' ? { vrundName: samparkVrund } : undefined
 
 		// Query
 		const userList = await User.findAndCountAll({
@@ -550,11 +463,11 @@ export const getAllUser = async (
 			include: [
 				{
 					model: SocTable,
-					required: !!samparkVrundWhere, // INNER JOIN if filter exists
+					required: !!samparkVrundWhere,
 					include: [
 						{
 							model: SamparkVrund,
-							required: !!samparkVrundWhere, // INNER JOIN if filter exists
+							required: !!samparkVrundWhere,
 							attributes: ['id', 'vrundName'],
 							where: samparkVrundWhere,
 						},
@@ -565,7 +478,7 @@ export const getAllUser = async (
 
 		return userList
 	} catch (err) {
-		console.error(err)
+		Logger.error(err)
 		return null
 	}
 }
@@ -618,19 +531,7 @@ export const getAttendanceReport = async (
 					model: User,
 					as: 'userData',
 					foreignKey: 'userId',
-					attributes: [
-						'id',
-						'middlename',
-						'deleteReason',
-						'active',
-						'userType',
-						'samparkVrund',
-						'mobileNumber',
-						'email',
-						'firstname',
-						'lastname',
-						'appId',
-					],
+					attributes: USER_PUBLIC_FIELDS,
 				},
 				{
 					model: Karykarm,
@@ -641,9 +542,6 @@ export const getAttendanceReport = async (
 			],
 			attributes: { exclude: ['createdAt', 'updatedAt', 'how', 'appattendance'] },
 		})
-		if (!userList) {
-			return null
-		}
 		return userList
 	} catch (err) {
 		Logger.error(err)
@@ -651,118 +549,127 @@ export const getAttendanceReport = async (
 	}
 }
 
-export const getAllKarykarm = async (mandal: string | any) =>
-	// userType: string | any,
-	// samparkVrund: string | any,
-	// active: boolean | any
-	{
-		try {
-			const karykarmList = await Karykarm.findAndCountAll({
-				order: [['createdAt', 'DESC']],
-				where: {
-					...(mandal && { mandal }),
-					// 	...(userType && { userType }),
-					// 	...(samparkVrund && { samparkVrund }),
-					// 	active,
-				},
-			})
-			if (!karykarmList) {
-				return null
-			}
-			return karykarmList
-		} catch (err) {
-			Logger.error(err)
-			return null
-		}
-	}
-
-export const genrateKarykarmReport = async (
-	appId: string | any,
-	offset: number | any,
-	limit: number | any,
-	orderBy: string | any,
-	orderType: string | any,
-	karykarmId: string | any
-) => {
+export const getAllKarykarm = async (mandal: string | any) => {
 	try {
-		let options: any = {
-			offset,
+		const karykarmList = await Karykarm.findAll({
+			order: [['createdAt', 'DESC']],
 			where: {
-				karykarmId,
+				...(mandal && { mandal }),
 			},
-			order: [[orderBy, orderType]],
+			attributes: {
+				include: [
+					[Sequelize.fn('COUNT', Sequelize.col('followUps.followUpId')), 'attendanceCount'],
+				],
+			},
 			include: [
 				{
-					model: User,
-					as: 'userData',
-					foreignKey: 'userId',
-					attributes: [
-						'mobileNumber',
-						'email',
-						'firstname',
-						'lastname',
-						'profilePic',
-						'appId',
-						'socId',
-					],
-					include: [
-						{
-							model: SocTable,
-							attributes: ['id', 'socName', 'samparkVrundId'],
-							required: false,
-							as: 'society',
-							include: [
-								{
-									model: SamparkVrund,
-									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId'],
-									required: false,
-									as: 'samparkVrund',
-									include: [
-										{
-											model: User,
-											attributes: ['id', 'firstname', 'lastname'],
-											as: 'karykar1profile',
-										},
-										{
-											model: User,
-											attributes: ['id', 'firstname', 'lastname'],
-											as: 'karykar2profile',
-										},
-									],
-								},
-							],
-						},
-					],
-				},
-				{
-					model: Karykarm,
-					as: 'karykarmData',
-					foreignKey: 'karykarmId',
-					where: {
-						...(karykarmId && { id: karykarmId }),
-					},
+					model: FollowUp,
+					attributes: [],
+					where: { attendance: true },
+					required: false,
 				},
 			],
-		}
-		const followUpList = await FollowUp.findAndCountAll({
-			...options,
+			group: ['Karykarm.id', 'Karykarm.karykarmId'],
 		})
-		if (!followUpList) {
-			return null
-		}
-		return followUpList
+
+		return karykarmList
 	} catch (err) {
 		Logger.error(err)
 		return null
 	}
 }
 
-export const createKarykarm = async (payload: KarykarmInterface) => {
+// export const generateKarykarmReport = async (karykarmId?: string | any) => {
+// 	try {
+// 		const options: any = {
+// 			include: [
+// 				{
+// 					model: User,
+// 					as: 'userData',
+// 					foreignKey: 'userId',
+// 					attributes: USER_PUBLIC_FIELDS,
+// 					include: [
+// 						{
+// 							model: SocTable,
+// 							as: 'society',
+// 							required: false,
+// 							attributes: ['id', 'socName', 'samparkVrundId'],
+// 							include: [
+// 								{
+// 									model: SamparkVrund,
+// 									as: 'samparkVrund',
+// 									required: false,
+// 									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId'],
+// 									include: [
+// 										{
+// 											model: User,
+// 											as: 'karykar1profile',
+// 											attributes: ['id', 'firstname', 'lastname'],
+// 										},
+// 										{
+// 											model: User,
+// 											as: 'karykar2profile',
+// 											attributes: ['id', 'firstname', 'lastname'],
+// 										},
+// 									],
+// 								},
+// 							],
+// 						},
+// 					],
+// 				},
+// 				{
+// 					model: Karykarm,
+// 					as: 'karykarmData',
+// 					foreignKey: 'karykarmId',
+// 					where: { ...(karykarmId && { id: karykarmId }) },
+// 				},
+// 			],
+// 		}
+
+// 		return await FollowUp.findAndCountAll(options)
+// 	} catch (err) {
+// 		Logger.error(err)
+// 		return null
+// 	}
+// }
+
+const isValidUUID = (id: string) => {
+	const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+	return uuidRegex.test(id)
+}
+
+export const upsertKarykarm = async (payload: KarykarmInterface) => {
+	if (!payload.karykarmTime) return { error: 'karykarmTime is required' }
+
 	try {
-		const isExist = await Karykarm.findOne({ where: { karykarmTime: payload.karykarmTime } })
-		if (isExist) return false
-		const karykarm = await Karykarm.create(payload)
-		return karykarm
+		let existing: Karykarm | null = null
+
+		if (payload.id && isValidUUID(payload.id)) {
+			// Editing → find by ID
+			existing = await Karykarm.findByPk(payload.id)
+		} else {
+			// Creating → check for existing entry on the same date
+			const dateOnly = payload.karykarmTime.toString().split('T')[0]
+			existing = await Karykarm.findOne({
+				where: where(fn('DATE', col('karykarmTime')), dateOnly),
+			})
+			if (existing) return { error: 'Karykarm date not available' }
+		}
+
+		// Update if existing, else create new
+		if (existing) return existing.update(payload)
+
+		return Karykarm.create({ ...payload, id: uuid() })
+	} catch (error) {
+		Logger.error(error)
+		throw error
+	}
+}
+
+export const getKarykarm = async (id: string) => {
+	try {
+		const existing = await Karykarm.findOne({ where: { id } })
+		return existing
 	} catch (error) {
 		Logger.error(error)
 		throw error
@@ -771,47 +678,15 @@ export const createKarykarm = async (payload: KarykarmInterface) => {
 
 export const deleteKarykarm = async (id: string) => {
 	try {
-		const isExist = await Karykarm.findOne({ where: { id } })
-		if (!isExist) return false
-		await FollowUp.destroy({ where: { karykarmId: id } })
-		await Karykarm.destroy({ where: { id } })
-		return true
-	} catch (error) {
-		Logger.error(error)
-		throw error
-	}
-}
+		const existing = await Karykarm.findOne({ where: { id } })
+		if (!existing) return false
 
-export const updateKarykarm = async (payload: KarykarmInterface) => {
-	try {
-		const isExist = await Karykarm.findOne({ where: { karykarmTime: payload.karykarmTime } })
-		if (!isExist) return false
-		try {
-			const karykarm = await Karykarm.findOne({
-				where: {
-					karykarmTime: payload.karykarmTime,
-				},
-			})
-				.then((result) => {
-					result!.update(
-						{
-							...payload,
-						},
-						{
-							where: {
-								karykarmTime: payload.karykarmTime,
-							},
-						}
-					)
-				})
-				.catch((error) => {
-					Logger.error(error)
-					return null
-				})
-			return karykarm
-		} catch (error) {
-			Logger.error(error)
-		}
+		// Delete associated follow-ups
+		await FollowUp.destroy({ where: { karykarmId: id } })
+		// Delete the Karykarm
+		await Karykarm.destroy({ where: { id } })
+
+		return true
 	} catch (error) {
 		Logger.error(error)
 		throw error
@@ -820,64 +695,46 @@ export const updateKarykarm = async (payload: KarykarmInterface) => {
 
 export const followUpInitiate = async (payload: any) => {
 	try {
-		const isExist = await Karykarm.findOne({ where: { id: payload.id } })
-		if (!isExist) return false
-		try {
-			const karykarm = await Karykarm.findOne({
+		// Find Karykarm
+		const karykarm = await Karykarm.findOne({
+			where: { id: payload.id, mandal: payload.mandal },
+		})
+
+		if (!karykarm) return false
+
+		// Update follow-up status
+		await karykarm.update({ followUpStart: payload.status })
+
+		if (payload.status === 'start') {
+			// Fetch active users in the mandal
+			const users = await User.findAll({
 				where: {
-					id: payload.id,
+					active: true,
 					mandal: payload.mandal,
+					[Op.not]: { userType: 'superadmin' },
 				},
+				attributes: ['id'], // fetch only required field
 			})
-				.then((result) => {
-					result!.update(
-						{
-							followUpStart: payload.status,
-						},
-						{
-							where: {
-								id: payload.id,
-								mandal: payload.mandal,
-							},
-						}
-					)
-				})
-				.catch((error) => {
-					Logger.error(error)
-					return null
-				})
-			if (payload.status === 'start') {
-				const userList = await User.findAll({
-					where: {
-						active: true,
-						mandal: payload.mandal,
-						[Op.not]: {
-							userType: 'superadmin',
-						},
-					},
-				})
-				await Promise.all(
-					userList?.map(
-						async (item) =>
-							await FollowUp.create({
-								id: uuid(),
-								followUp: false,
-								attendance: false,
-								appattendance: false,
-								userId: item?.dataValues?.id,
-								karykarmId: payload.id,
-								coming: false,
-								samparkVrund: item?.dataValues?.samparkVrund,
-								how: '',
-								remark: '',
-							})
-					)
-				)
+
+			if (users.length) {
+				const followUps = users.map((user) => ({
+					id: uuid(),
+					followUp: false,
+					attendance: false,
+					appattendance: false,
+					userId: user.dataValues.id,
+					karykarmId: payload.id,
+					coming: false,
+					how: '',
+					remark: '',
+				}))
+
+				// Bulk insert follow-ups
+				await FollowUp.bulkCreate(followUps)
 			}
-			return karykarm
-		} catch (error) {
-			Logger.error(error)
 		}
+
+		return karykarm
 	} catch (error) {
 		Logger.error(error)
 		throw error
@@ -891,15 +748,14 @@ export const getFollowUpList = async (
 	coming: string,
 	attendance: string,
 	appattendance: string,
-	appId: string,
 	offset: number,
 	limit: number,
 	searchTxt: string,
 	orderBy: string,
 	orderType: string,
-	karykarmId: string,
 	followUpStart: string,
-	mandal: string | any
+	mandal: string | any,
+	karykarmId: string | any
 ) => {
 	try {
 		let options: any = {
@@ -910,16 +766,18 @@ export const getFollowUpList = async (
 				...(attendance && { attendance: attendance === 'true' }),
 				...(appattendance && { appattendance: appattendance === 'true' }),
 				...(followUp && { followUp: followUp === 'true' }),
+				...(karykarmId && { karykarmId }),
 			},
-			order: [[orderBy, orderType]],
+			order: [['userId', 'ASC']],
 			include: [
 				{
 					model: User,
 					as: 'userData', // Ensure that 'userData' is the alias used for the User relation
-					attributes: ['firstname', 'lastname', 'email', 'profilePic', 'mobileNumber'], // Select only the firstname and lastname
+					attributes: USER_PUBLIC_FIELDS, // Select only the firstname and lastname
 					required: true, // Set to false if you want to include FollowUp records even if User isn't found
 					where: {
 						...(mandal && { mandal }),
+						activeGroup: false,
 						...(userType && { userType }),
 						[Op.or]: [
 							{ firstname: { [Op.iLike]: `%${searchTxt}%` } },
@@ -938,10 +796,22 @@ export const getFollowUpList = async (
 							include: [
 								{
 									model: SamparkVrund,
-									attributes: ['vrundName'],
 									where: {
 										...(samparkVrund && { vrundName: samparkVrund }),
 									},
+									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId'],
+									include: [
+										{
+											model: User,
+											as: 'karykar1profile',
+											attributes: ['id', 'firstname', 'lastname'],
+										},
+										{
+											model: User,
+											as: 'karykar2profile',
+											attributes: ['id', 'firstname', 'lastname'],
+										},
+									],
 								},
 							],
 						},
@@ -971,7 +841,7 @@ export const getFollowUpList = async (
 	}
 }
 
-export const getAttendanceList = async (userId: string, mandal: string | any) => {
+export const getAttendanceList = async (userId: string, mandal?: string) => {
 	try {
 		const followUpList = await FollowUp.findAndCountAll({
 			where: { userId },
@@ -979,73 +849,57 @@ export const getAttendanceList = async (userId: string, mandal: string | any) =>
 				{
 					model: User,
 					as: 'userData',
-					foreignKey: 'userId',
-					attributes: ['mobileNumber', 'email', 'firstname', 'lastname', 'appId'],
-					where: {
-						...(mandal && { mandal }),
-					},
+					attributes: USER_PUBLIC_FIELDS,
+					where: mandal ? { mandal } : undefined,
 				},
 				{
 					model: Karykarm,
 					as: 'karykarmData',
-					foreignKey: 'karykarmId',
-					where: {
-						...(mandal && { mandal }),
-					},
+					where: mandal ? { mandal } : undefined,
 				},
 			],
 			order: [['createdAt', 'DESC']],
 		})
-		if (!followUpList) {
-			return null
-		}
-		return followUpList
+
+		return followUpList || null
 	} catch (err) {
 		Logger.error(err)
 		return null
 	}
 }
 
-export const getAllSeva = async (userId: string, sevaId: string) => {
+export const getAllSeva = async (userId?: string, sevaId?: string) => {
 	try {
 		const followUpList = await SevaAllocated.findAndCountAll({
-			where: { ...(sevaId && { sevaId }), ...(userId && { userId }) },
+			where: {
+				...(userId && { userId }),
+				...(sevaId && { sevaId }),
+			},
 			include: [
 				{
 					model: User,
 					as: 'userData',
-					foreignKey: 'userId',
-					attributes: [
-						'firstname',
-						'middlename',
-						'lastname',
-						'mobileNumber',
-						'active',
-						'profilePic',
-					],
+					attributes: USER_PUBLIC_FIELDS,
 				},
 				{
 					model: Seva,
 					as: 'sevaData',
-					foreignKey: 'sevaId',
 					attributes: ['sevaName'],
 				},
 			],
 			order: [['id', 'DESC']],
 		})
-		if (!followUpList) {
-			return null
-		}
-		return followUpList
+
+		return followUpList || null
 	} catch (err) {
 		Logger.error(err)
 		return null
 	}
 }
 
-export const getFollowUpData = async (payload: any) => {
+export const getFollowUpData = async (payload: { id: string }) => {
 	try {
-		const followUpList = await FollowUp.findOne({
+		const followUp = await FollowUp.findOne({
 			attributes: { exclude: ['createdAt', 'updatedAt'] },
 			where: { id: payload.id },
 			include: [
@@ -1056,7 +910,7 @@ export const getFollowUpData = async (payload: any) => {
 					include: [
 						{
 							model: SocTable,
-							as: 'society', // matches @BelongsTo in User
+							as: 'society',
 							attributes: ['socName'],
 							include: [
 								{
@@ -1067,29 +921,30 @@ export const getFollowUpData = async (payload: any) => {
 						},
 					],
 				},
-				{ model: Karykarm, as: 'karykarmData', foreignKey: 'karykarmId' },
+				{
+					model: Karykarm,
+					as: 'karykarmData',
+					attributes: { exclude: ['createdAt', 'updatedAt'] }, // optional, keeps consistency
+				},
 			],
 		})
-		if (!followUpList) {
-			return null
-		}
-		return followUpList
+
+		return followUp || null
 	} catch (err) {
 		Logger.error(err)
 		return null
 	}
 }
 
-export const getProfileData = async (payload: any) => {
+export const getProfileData = async (payload: { id: string }) => {
 	try {
-		const profileData = await User.findOne({
+		const profile = await User.findOne({
 			where: { id: payload.id },
-			// include: [{ model: SatsangProfile, as: 'satsangData', foreignKey: 'userId' }],
 			attributes: { exclude: ['password'] },
 			include: [
 				{
 					model: SocTable,
-					as: 'society', // matches @BelongsTo in User
+					as: 'society',
 					attributes: ['socName'],
 					include: [
 						{
@@ -1098,26 +953,26 @@ export const getProfileData = async (payload: any) => {
 						},
 					],
 				},
+				// Uncomment if you want SatsangProfile included
+				// {
+				//   model: SatsangProfile,
+				//   as: 'satsangData',
+				//   attributes: { exclude: ['createdAt', 'updatedAt'] },
+				// },
 			],
 		})
-		if (!profileData) {
-			return null
-		}
-		return profileData
+
+		return profile || null
 	} catch (err) {
 		Logger.error(err)
 		return null
 	}
 }
-export const satsangData = async (payload: any) => {
+
+export const satsangData = async (payload: { id: string }) => {
 	try {
-		const profileData = await SatsangProfile.findOne({
-			where: { userId: payload.id },
-		})
-		if (!profileData) {
-			return null
-		}
-		return profileData
+		const profile = await SatsangProfile.findOne({ where: { userId: payload.id } })
+		return profile || null
 	} catch (err) {
 		Logger.error(err)
 		return null
@@ -1126,56 +981,41 @@ export const satsangData = async (payload: any) => {
 
 export const updateFollowUp = async (payload: any) => {
 	try {
-		const isExist = await FollowUp.findOne({ where: { id: payload.id } })
-		if (!isExist) return false
-		try {
-			const followUp = await FollowUp.findOne({
-				where: {
-					id: payload.id,
-				},
-			})
-				.then((result) => {
-					result!.update(
-						{
-							followUp: payload.followUp,
-							coming: payload.coming,
-							how: payload.how,
-							remark: payload.remark,
-						},
-						{
-							where: {
-								id: payload.id,
-							},
-						}
-					)
-				})
-				.catch((error) => {
-					Logger.error(error)
-					return null
-				})
-			return followUp
-		} catch (error) {
-			Logger.error(error)
-		}
+		// Find the record once
+		const followUp = await FollowUp.findOne({ where: { id: payload.id } })
+		if (!followUp) return false
+
+		// Update the record
+		await followUp.update({
+			followUp: payload.followUp,
+			coming: payload.coming,
+			how: payload.how,
+			remark: payload.remark,
+		})
+
+		return followUp
 	} catch (error) {
 		Logger.error(error)
-		throw error
+		throw error // keep throwing to propagate errors
 	}
 }
 
-export const changeAttendance = async (payload: any) => {
+export const changeAttendance = async (payload: {
+	userId: string
+	karykarmId: string
+	attendance: boolean
+	appattendance: boolean
+}) => {
 	try {
 		const followUp = await FollowUp.findOne({
 			where: { userId: payload.userId, karykarmId: payload.karykarmId },
 		})
 
 		if (!followUp) return false
-		await followUp.update({
+		return await followUp.update({
 			attendance: payload.attendance,
 			appattendance: payload.appattendance,
 		})
-
-		return followUp
 	} catch (error: any) {
 		Logger.error(`Error updating attendance: ${error?.message}`)
 		throw error
@@ -1184,14 +1024,16 @@ export const changeAttendance = async (payload: any) => {
 
 export const updateBulkAttendance = async (usersList: string[], karykarmId: string) => {
 	try {
-		if (!usersList || usersList.length === 0)
+		if (!usersList?.length)
 			return { success: false, missingUsers: [], message: 'No users provided.' }
 
+		// Map full names to { firstName, lastName }
 		const names = usersList.map((user) => {
 			const [firstName, lastName] = user.trim().split(' ')
 			return { firstName, lastName }
 		})
 
+		// Fetch users matching names
 		const users = await User.findAll({
 			where: {
 				[Op.or]: names.map((n) => ({
@@ -1202,38 +1044,33 @@ export const updateBulkAttendance = async (usersList: string[], karykarmId: stri
 			attributes: ['id', 'firstname', 'lastname'],
 		})
 
-		if (users.length === 0)
+		if (!users.length)
 			return { success: false, missingUsers: usersList, message: 'No matching users found.' }
 
-		const userIds = users.map((u) => u?.get('id'))
+		const userIds = users.map((u) => u.get('id'))
 
+		// Fetch follow-up records for these users and karykarm
 		const followUps = await FollowUp.findAll({
-			where: {
-				userId: userIds,
-				karykarmId,
-			},
+			where: { userId: userIds, karykarmId },
 			attributes: ['userId'],
 		})
 
 		const foundUserNames = followUps.map((f) => {
-			const user = users.find((u) => u?.get('id') === f?.get('userId'))
-			return `${user?.get('firstname')} ${user?.get('lastname')}`?.toLowerCase()
+			const user = users.find((u) => u.get('id') === f.get('userId'))
+			return `${user?.get('firstname')} ${user?.get('lastname')}`.toLowerCase()
 		})
 
-		const missingUsers = usersList.filter((u) => !foundUserNames.includes(u?.toLowerCase()))
+		const missingUsers = usersList.filter((u) => !foundUserNames.includes(u.toLowerCase()))
 
+		// Bulk update attendance
 		await FollowUp.update(
 			{ attendance: true, appattendance: true },
 			{
-				where: {
-					userId: userIds,
-					attendance: false,
-					karykarmId,
-				},
+				where: { userId: userIds, attendance: false, karykarmId },
 			}
 		)
 
-		return { success: true, missingUsers: missingUsers || [] }
+		return { success: true, missingUsers }
 	} catch (error) {
 		Logger.error('Error in updateBulkAttendance:', error)
 		throw error
@@ -1242,13 +1079,11 @@ export const updateBulkAttendance = async (usersList: string[], karykarmId: stri
 
 export const login = async (filter: Partial<UserInterface>) => {
 	try {
+		// Find active user matching the filter
 		const user = await User.findOne({ where: { ...filter, active: true } })
-		if (!user) {
-			return null
-		}
-		return user
+		return user || null
 	} catch (err) {
-		Logger.error(err)
+		Logger.error('Login error:', err)
 		return null
 	}
 }
@@ -1260,21 +1095,33 @@ export const verifyPassword = async (
 	try {
 		return await bcrypt.compare(enteredPassword, storedPassword)
 	} catch (err) {
-		Logger.error(err)
+		Logger.error('Password verification error:', err)
 		return false
 	}
 }
 
-export const createSoc = async (payload) => {
+export const upsertSoc = async (payload: any) => {
 	try {
-		const isExist = await SocTable.findOne({
-			where: { socName: payload?.socName, area: payload?.area },
-		})
-		if (isExist) return false
-		const soc = await SocTable.create(payload)
-		return soc
+		console.log(payload)
+		if (payload.id) {
+			// Update existing society
+			const existingSoc = await SocTable.findOne({ where: { id: payload.id } })
+			if (!existingSoc) return false
+
+			await existingSoc.update({ ...payload })
+			return existingSoc
+		} else {
+			// Check for duplicate before creating
+			const duplicate = await SocTable.findOne({
+				where: { socName: payload?.socName, area: payload?.area },
+			})
+			if (duplicate) return false
+
+			const newSoc = await SocTable.create({ ...payload, id: uuid() })
+			return newSoc
+		}
 	} catch (error) {
-		Logger.error(error)
+		Logger.error('Error in upsertSoc:', error)
 		throw error
 	}
 }
@@ -1303,43 +1150,7 @@ export const deleteSoc = async (id: string | any) => {
 	}
 }
 
-export const updateSoc = async (payload) => {
-	try {
-		const isExist = await SocTable.findOne({ where: { id: payload.id } })
-		if (!isExist) return false
-		try {
-			const soc = await SocTable.findOne({
-				where: {
-					id: payload.id,
-				},
-			})
-				.then((result) => {
-					result!.update(
-						{
-							...payload,
-						},
-						{
-							where: {
-								id: payload.id,
-							},
-						}
-					)
-				})
-				.catch((error) => {
-					Logger.error(error)
-					return null
-				})
-			return soc
-		} catch (error) {
-			Logger.error(error)
-		}
-	} catch (error) {
-		Logger.error(error)
-		throw error
-	}
-}
-
-export const getAllSocList = async (id: any) => {
+export const getAllSocList = async (id?: string) => {
 	try {
 		const socRows = await SocTable.findAll({
 			attributes: [
@@ -1347,7 +1158,6 @@ export const getAllSocList = async (id: any) => {
 				'socName',
 				'area',
 				[fn('COUNT', col('users.id')), 'userCount'],
-				// total user count across all societies as a window function
 				[literal('SUM(COUNT(users.id)) OVER ()'), 'totalUsers'],
 				[col('samparkVrund.vrundName'), 'vrundName'],
 			],
@@ -1356,10 +1166,7 @@ export const getAllSocList = async (id: any) => {
 					model: User,
 					attributes: [],
 					required: false,
-					where: {
-						active: true,
-						mandal: 'utsav',
-					},
+					where: { active: true, mandal: 'utsav' },
 				},
 				{
 					model: SamparkVrund,
@@ -1374,12 +1181,7 @@ export const getAllSocList = async (id: any) => {
 			raw: true,
 		})
 
-		if (!socRows || socRows.length === 0) {
-			return { count: 0, rows: [], totalUsers: 0 }
-		}
-
-		// totalUsers will be the same for each row because of the window function
-		const totalUsers = Number((socRows[0] as any).totalUsers)
+		const totalUsers = Number((socRows[0] as any)?.totalUsers ?? 0)
 
 		return {
 			count: socRows.length,
@@ -1392,7 +1194,7 @@ export const getAllSocList = async (id: any) => {
 	}
 }
 
-const normalize = (v) =>
+const normalize = (v: string | undefined) =>
 	v
 		?.trim()
 		?.toLowerCase()
@@ -1420,24 +1222,24 @@ export const migrateSocieties = async () => {
 			const isExist = await SocTable.findOne({
 				where: {
 					[Op.and]: [
-						where(fn('LOWER', col('socName')), soc?.socName?.toLowerCase()),
-						where(fn('LOWER', col('area')), soc?.nearBy?.toLowerCase()),
+						where(fn('LOWER', col('socName')), soc.socName?.toLowerCase()),
+						where(fn('LOWER', col('area')), soc.nearBy?.toLowerCase()),
 					],
 				},
 			})
+
+			const userUpdatePayload = {
+				socId: isExist?.dataValues?.id,
+				houseNumber: soc.houseNumber?.trim(),
+				socName: normalizedSocName?.trim(),
+				nearBy: normalizedArea?.trim(),
+				area: soc?.area?.trim(),
+			}
+
 			if (isExist) {
-				if (!soc?.socId?.trim()) {
-					console.log(`Society exists: ${isExist?.dataValues?.id}, ${soc?.id}`)
-					await User.update(
-						{
-							socId: isExist?.dataValues?.id,
-							houseNumber: soc.houseNumber?.trim(),
-							socName: normalizedSocName?.trim(),
-							nearBy: normalizedArea?.trim(),
-							area: soc?.area?.trim(),
-						}, //
-						{ where: { id: soc.id } }
-					)
+				if (!soc.socId?.trim()) {
+					console.log(`Society exists: ${isExist.dataValues.id}, ${soc.id}`)
+					await User.update(userUpdatePayload, { where: { id: soc.id } })
 				}
 			} else {
 				const newId = uuid()
@@ -1446,17 +1248,7 @@ export const migrateSocieties = async () => {
 					socName: normalizedSocName,
 					area: normalizedArea,
 				})
-				console.log(`Created new society: ${newId}, ${soc?.id}`)
-				await User.update(
-					{
-						socId: newId,
-						houseNumber: soc.houseNumber?.trim(),
-						socName: normalizedSocName?.trim(),
-						nearBy: normalizedArea?.trim(),
-						area: soc?.area?.trim(),
-					}, //
-					{ where: { id: soc.id } }
-				)
+				await User.update({ ...userUpdatePayload, socId: newId }, { where: { id: soc.id } })
 			}
 		} catch (error) {
 			Logger.error(`Error processing society for user ID ${soc.id}: ${error}`)

@@ -67,8 +67,8 @@ class User extends Model<UserInterface, UserAttributes> {
 	password!: string
 	@Column
 	userType!: string
-	// @Column
-	// samparkVrund!: string
+	@Column({ defaultValue: false })
+	activeGroup!: boolean
 	@Column
 	token!: string
 	@Column({ defaultValue: '' })

@@ -39,6 +39,7 @@ export interface UserInterface {
 	taluka?: string
 	village?: string
 	socId?: string | null
+	activeGroup?: boolean
 }
 
 export interface satsangProfileInterface {

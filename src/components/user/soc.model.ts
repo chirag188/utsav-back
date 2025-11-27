@@ -1,4 +1,12 @@
-import { Table, Model, Column, HasMany, ForeignKey, DataType, BelongsTo } from 'sequelize-typescript'
+import {
+	Table,
+	Model,
+	Column,
+	HasMany,
+	ForeignKey,
+	DataType,
+	BelongsTo,
+} from 'sequelize-typescript'
 import User from './user.model'
 import SamparkVrund from './SamparkVrund.model'
 
@@ -12,10 +20,16 @@ class SocTable extends Model<any, any> {
 	area!: string
 	// A society belongs to one SamparkVrund
 	@ForeignKey(() => SamparkVrund)
-	@Column
+	@Column({
+		type: DataType.STRING,
+		allowNull: true, // This must be set to true to allow setting it to null
+		onDelete: 'SET NULL',
+	})
 	samparkVrundId!: string
 
-	@BelongsTo(() => SamparkVrund)
+	@BelongsTo(() => SamparkVrund, {
+		onDelete: 'SET NULL',
+	})
 	samparkVrund!: SamparkVrund
 
 	@HasMany(() => User)

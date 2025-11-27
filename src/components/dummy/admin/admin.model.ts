@@ -46,13 +46,6 @@ class _admin extends Model<AdminInterface, UserAttributes> {
 	kycStatus!: string
 	@Column({ defaultValue: false })
 	kybStatus!: boolean
-
-	// REFERENCE FOR ASSOCIATION
-	/* @HasMany(() => Projects, 'userId')
-	projects!: Projects[]
-
-	@HasMany(() => Order, 'userId')
-	orderId!: number */
 }
 
 export default _admin
