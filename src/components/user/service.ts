@@ -28,17 +28,13 @@ const USER_PUBLIC_FIELDS = [
 	'DOB',
 ]
 
-const upsert = async <T>(Model: any, findWhere: object, payload: T) => {
+const upsert = async <T>(Model: any, findWhere: any, payload: any) => {
 	const existing = await Model.findOne({ where: findWhere })
 	if (existing) return existing.update(payload)
-	return Model.create({ ...payload, id: uuid() })
-}
-
-const safeDelete = async (Model: any, id: string, deletePayload?: object) => {
-	const entity = await Model.findOne({ where: { id } })
-	if (!entity) return false
-	if (deletePayload) return entity.update(deletePayload)
-	return entity.destroy()
+	return Model.create({
+		...payload,
+		...(payload?.id ? {} : { id: uuid() }),
+	})
 }
 
 export const upsertUser = async (payload: UserInterface) => {
@@ -46,11 +42,16 @@ export const upsertUser = async (payload: UserInterface) => {
 		if (payload.socId === '') {
 			payload.socId = null
 		}
-		return upsert(
-			User,
-			payload.id ? { id: payload.id } : { mobileNumber: payload.mobileNumber },
-			payload
-		)
+		return upsert(User, payload.id ? { id: payload.id } : { mobileNumber: payload.mobileNumber }, {
+			...payload,
+			...(payload?.id
+				? {}
+				: {
+						id: `${payload?.firstname.toLowerCase()?.replace(/\s+/g, '')}${Math.floor(
+							Math.random() * (999 - 100 + 1) + 100
+						)}`,
+				  }),
+		})
 	} catch (error) {
 		Logger.error(error)
 		throw error

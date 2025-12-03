@@ -16,7 +16,8 @@ const _password: string = Config.DB.DB_PASSWORD!
 // const _port: string = Config.DB.DB_PORT!
 
 const db = new Sequelize(
-	"postgresql://utsav_db_6vtc_user:I7GLBwxqQgEmg8gLiskOuNP88hWjViHM@dpg-d4gdct6fu37c739m1g90-a.oregon-postgres.render.com/utsav_db_6vtc?sslmode=no-verify",
+	'postgresql://neondb_owner:npg_MxaiqhTOS67A@ep-shy-wave-abmtcykr-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require',
+	// "postgresql://utsav_db_6vtc_user:I7GLBwxqQgEmg8gLiskOuNP88hWjViHM@dpg-d4gdct6fu37c739m1g90-a.oregon-postgres.render.com/utsav_db_6vtc?sslmode=no-verify",
 	{
 		storage: ':memory:',
 		logging: (msg) => Logger.info(msg),
