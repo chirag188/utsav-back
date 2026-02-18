@@ -18,6 +18,7 @@ const USER_PUBLIC_FIELDS = [
 	'email',
 	'firstname',
 	'lastname',
+	'middlename',
 	'mobileNumber',
 	'profilePic',
 	'socId',
@@ -50,7 +51,7 @@ export const upsertUser = async (payload: UserInterface) => {
 						id: `${payload?.firstname.toLowerCase()?.replace(/\s+/g, '')}${Math.floor(
 							Math.random() * (999 - 100 + 1) + 100
 						)}`,
-				  }),
+					}),
 		})
 	} catch (error) {
 		Logger.error(error)
@@ -447,6 +448,9 @@ export const getAllUser = async (
 				Sequelize.where(Sequelize.cast(Sequelize.col('mobileNumber'), 'TEXT'), {
 					[Op.iLike]: `%${searchTxt}%`,
 				}),
+				// Sequelize.where(Sequelize.cast(Sequelize.col('fatherMobileNumber'), 'TEXT'), {
+				// 	[Op.iLike]: `%${searchTxt}%`,
+				// }),
 			]
 		}
 
@@ -558,9 +562,7 @@ export const getAllKarykarm = async (mandal: string | any) => {
 				...(mandal && { mandal }),
 			},
 			attributes: {
-				include: [
-					[Sequelize.fn('COUNT', Sequelize.col('followUps.followUpId')), 'attendanceCount'],
-				],
+				include: [[Sequelize.fn('COUNT', Sequelize.col('followUps.id')), 'attendanceCount']],
 			},
 			include: [
 				{
