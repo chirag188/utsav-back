@@ -150,6 +150,11 @@ export const upsertSatsangProfile = async (payload: satsangProfileInterface) => 
 
 export const upsertSamparkVrund = async (payload: any) => {
 	try {
+		// If karykar2profileId is not available, empty, or "", set it to null
+		if (!payload.karykar2profileId || payload.karykar2profileId === '') {
+			payload.karykar2profileId = null
+		}
+
 		// Find existing SamparkVrund based on mandal and karykar IDs
 		return await upsert(
 			SamparkVrund,
@@ -164,27 +169,6 @@ export const upsertSamparkVrund = async (payload: any) => {
 			},
 			payload
 		)
-		// const existing = await SamparkVrund.findOne({
-		// 	where: {
-		// 		mandal: payload.mandal,
-		// 		[Op.or]: [
-		// 			{ karykar1profileId: payload.karykar1profileId },
-		// 			payload.karykar2profileId && { karykar2profileId: payload.karykar2profileId },
-		// 			payload.karykar2profileId && { karykar1profileId: payload.karykar2profileId },
-		// 			{ karykar2profileId: payload.karykar1profileId },
-		// 		].filter(Boolean), // remove false entries if karykar2profileId is undefined
-		// 	},
-		// })
-
-		// if (existing) {
-		// 	// Update existing record
-		// 	const updated = await existing.update({ ...payload })
-		// 	return updated
-		// } else {
-		// 	// Create new record
-		// 	const newRecord = await SamparkVrund.create(payload)
-		// 	return newRecord
-		// }
 	} catch (error) {
 		Logger.error(error)
 		throw error
@@ -335,7 +319,7 @@ export const getAllSamparkVrund = async (mandal: string) => {
 
 		// Add "Active" vrund only once
 		vrundList.push({
-			vrundName: 'Active',
+			vrundName: 'Sanyukt',
 			karykar1profileId: '',
 			societies: [],
 			userList: activeGroupList,
@@ -714,7 +698,7 @@ export const followUpInitiate = async (payload: any) => {
 				where: {
 					active: true,
 					mandal: payload.mandal,
-					[Op.not]: { userType: 'superadmin' },
+					// [Op.not]: { userType: 'superadmin' },
 				},
 				attributes: ['id'], // fetch only required field
 			})
@@ -780,7 +764,7 @@ export const getFollowUpList = async (
 					required: true, // Set to false if you want to include FollowUp records even if User isn't found
 					where: {
 						...(mandal && { mandal }),
-						activeGroup: false,
+						// activeGroup: false,
 						...(userType && { userType }),
 						[Op.or]: [
 							{ firstname: { [Op.iLike]: `%${searchTxt}%` } },

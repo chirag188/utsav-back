@@ -1,6 +1,4 @@
-import {
-	satsangProfileInterface,
-} from '@interfaces/user'
+import { satsangProfileInterface } from '@interfaces/user'
 import { Request, Response } from 'express'
 import { Logger } from '@config/logger'
 import { loginValidation, registerRequest } from '@user/validator'
@@ -190,7 +188,7 @@ export const createKarykarmApi = (req: Request, res: Response) => {
 export const createSocApi = (req: Request, res: Response) =>
 	upsertApi(req, res, upsertSoc, 'Society')
 
-export const createSamparkVrundApi = (req: Request, res: Response) =>
+export const createSamparkVrundApi = (req: Request, res: Response) => 
 	upsertApi(req, res, upsertSamparkVrund, 'SamparkVrund', async (data, result) => {
 		const samparkVrundId = result?.dataValues?.id
 		if (!samparkVrundId) return
@@ -198,8 +196,8 @@ export const createSamparkVrundApi = (req: Request, res: Response) =>
 		const socIds = Array.isArray(data.socs)
 			? data.socs
 			: typeof data.socs === 'string'
-			? [data.socs]
-			: []
+				? [data.socs]
+				: []
 
 		// Start transaction for atomic operations
 		await (SocTable as any).sequelize.transaction(async (transaction) => {
@@ -730,9 +728,9 @@ export const getKarykarmAPI = async (req: Request, res: Response) => {
 export const getFollowUpListApi = async (req: Request, res: Response) => {
 	try {
 		const {
-			userType = 'yuvak',
+			userType = '',
 			mandal = '',
-			samparkVrund = 'A',
+			samparkVrund = '',
 			coming = '',
 			attendance = '',
 			appattendance = '',
