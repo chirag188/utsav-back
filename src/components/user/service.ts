@@ -480,53 +480,72 @@ export const getAttendanceReport = async (
 	orderType: string,
 	userType: string | any,
 	samparkVrund: string | any,
-	active: boolean | any
+	active: boolean | any,
+	lastMonths?: string | any
 ) => {
 	try {
-		// let options: any = {
-		// 	offset,
-		// 	...(limit !== 30 && { limit }),
-		// 	where: {
-		// 		...(userType && { userType }),
-		// 		...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
-		// 		active,
-		// 	},
-		// 	attributes: { exclude: ['password'] },
-		// 	order: [[orderBy, orderType]],
-		// }
-		// if (searchTxt !== '') {
-		// 	options.where = {
-		// 		...(userType && { userType }),
-		// 		...(samparkVrund && { samparkVrund: samparkVrund === 'NA' ? '' : samparkVrund }),
-		// 		active,
-		// 		[Op.or]: {
-		// 			firstname: {
-		// 				[Op.iLike]: `%${searchTxt}%`,
-		// 			},
-		// 			lastname: {
-		// 				[Op.iLike]: `%${searchTxt}%`,
-		// 			},
-		// 			email: {
-		// 				[Op.iLike]: `%${searchTxt}%`,
-		// 			},
-		// 		},
-		// 	}
-		// }
+		// SamparkVrund filter
+		const samparkVrundWhere =
+			samparkVrund && samparkVrund !== 'NA' ? { vrundName: samparkVrund } : undefined
+
+		// Last months filter -> convert to date
+		let karykarmDateFilter: any = undefined
+		if (lastMonths) {
+			const months = parseInt(lastMonths, 10)
+			if (!isNaN(months) && months > 0) {
+				const d = new Date()
+				d.setMonth(d.getMonth() - months)
+				karykarmDateFilter = { [Op.gte]: d }
+			}
+		}
 
 		const userList = await FollowUp.findAndCountAll({
-			// ...options,
 			include: [
 				{
 					model: User,
 					as: 'userData',
 					foreignKey: 'userId',
 					attributes: USER_PUBLIC_FIELDS,
+					required: true, // INNER JOIN to exclude FollowUps with missing users
+					where: {
+						...(userType && { userType }),
+						...(active !== undefined && { active }),
+						[Op.or]: [
+							{ firstname: { [Op.iLike]: `%${searchTxt}%` } },
+							{ lastname: { [Op.iLike]: `%${searchTxt}%` } },
+							{ email: { [Op.iLike]: `%${searchTxt}%` } },
+							Sequelize.where(Sequelize.cast(Sequelize.col('mobileNumber'), 'TEXT'), {
+								[Op.iLike]: `%${searchTxt}%`,
+							}),
+						],
+					},
+					include: [
+						{
+							model: SocTable,
+							as: 'society',
+							required: !!samparkVrundWhere,
+							attributes: ['id', 'socName', 'samparkVrundId'],
+							include: [
+								{
+									model: SamparkVrund,
+									as: 'samparkVrund',
+									required: !!samparkVrundWhere,
+									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId'],
+									where: samparkVrundWhere,
+								},
+							],
+						},
+					],
 				},
 				{
 					model: Karykarm,
 					as: 'karykarmData',
 					foreignKey: 'karykarmId',
-					attributes: ['id', 'karykarmId', 'karykarmName'],
+					attributes: ['id', 'karykarmId', 'karykarmName', 'karykarmTime'],
+					required: !!karykarmDateFilter,
+					where: {
+						...(karykarmDateFilter && { karykarmTime: karykarmDateFilter }),
+					},
 				},
 			],
 			attributes: { exclude: ['createdAt', 'updatedAt', 'how', 'appattendance'] },

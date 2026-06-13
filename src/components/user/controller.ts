@@ -188,7 +188,7 @@ export const createKarykarmApi = (req: Request, res: Response) => {
 export const createSocApi = (req: Request, res: Response) =>
 	upsertApi(req, res, upsertSoc, 'Society')
 
-export const createSamparkVrundApi = (req: Request, res: Response) => 
+export const createSamparkVrundApi = (req: Request, res: Response) =>
 	upsertApi(req, res, upsertSamparkVrund, 'SamparkVrund', async (data, result) => {
 		const samparkVrundId = result?.dataValues?.id
 		if (!samparkVrundId) return
@@ -660,6 +660,7 @@ export const getAttendanceReportAPI = async (req: Request, res: Response) => {
 			searchTxt = '',
 			orderBy = 'firstname',
 			orderType = 'DESC',
+			lastMonths = '',
 		} = req.query as Record<string, string>
 
 		const userList = await getAttendanceReport(
@@ -670,7 +671,8 @@ export const getAttendanceReportAPI = async (req: Request, res: Response) => {
 			orderType,
 			userType,
 			samparkVrund,
-			active === 'true'
+			active === 'true',
+			lastMonths
 		)
 
 		if (!userList) return errorHandler({ res, err: Messages.USER_NOT_FOUND, statusCode: 502 })
