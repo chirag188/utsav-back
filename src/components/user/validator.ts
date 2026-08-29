@@ -102,6 +102,7 @@ export const samparkVrundRequest = async (data: Object) => {
 		id: Joi.string().required(),
 		karykar1profile: Joi.string().required(),
 		karykar2profile: Joi.string().required(),
+		karykar3profile: Joi.string().required(),
 		Yuvaks: Joi.string().required(),
 		name: Joi.number().required(),
 	})

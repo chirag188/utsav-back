@@ -28,6 +28,22 @@ export interface UserInterface {
 	gender: string
 	samparkVrund?: string
 	token?: string
+	otpCode?: number | null
+	otpExpire?: Date | null
+	passwordResetExpired?: Date | null
+	forgotPasswordLimit?: number
+	forgotPasswordBlockTime?: Date | null
+	linkSentBlocked?: boolean
+	otpLimit?: number
+	otpBlockTime?: Date | null
+	isOTPBlocked?: boolean
+	loginAttempt?: number
+	loginBlockedTime?: Date | null
+	isLoginBlocked?: boolean
+	otpMobileLimit?: number
+	mobileOtpBlockTime?: Date | null
+	mobileOtpBlocked?: boolean
+	incorrectOtpAttempt?: number
 	job?: string
 	business?: string
 	occupation?: string
@@ -40,6 +56,8 @@ export interface UserInterface {
 	village?: string
 	socId?: string | null
 	activeGroup?: boolean
+	passwordChangedAt?: Date | null
+	passwordChangeByUserTokenCreatedAt?: Date | null
 }
 
 export interface satsangProfileInterface {
@@ -70,6 +88,7 @@ export interface SamparkVrundInterface {
 	id?: string
 	karykar1profileId: string
 	karykar2profileId?: string | any
+	karykar3profileId?: string | any
 	vrundName: string
 	socs?: string
 	mandal?: string

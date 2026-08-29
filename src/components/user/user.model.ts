@@ -63,8 +63,44 @@ class User extends Model<UserInterface, UserAttributes> {
 	email!: string
 	@Column({ defaultValue: '' })
 	sevaIntrest!: string
-	@Column({ defaultValue: '1234' })
+	@Column({ defaultValue: '' })
 	password!: string
+	@Column({ type: DataType.INTEGER, allowNull: true })
+	otpCode!: number | null
+	@Column({ type: DataType.DATE, allowNull: true })
+	otpExpire!: Date | null
+	@Column({ type: DataType.DATE, allowNull: true })
+	passwordResetExpired!: Date | null
+	@Column({ type: DataType.INTEGER, defaultValue: 3, allowNull: true })
+	forgotPasswordLimit!: number
+	@Column({ type: DataType.DATE, allowNull: true })
+	forgotPasswordBlockTime!: Date | null
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	linkSentBlocked!: boolean
+	@Column({ type: DataType.INTEGER, defaultValue: 5, allowNull: true })
+	otpLimit!: number
+	@Column({ type: DataType.DATE, allowNull: true })
+	otpBlockTime!: Date | null
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	isOTPBlocked!: boolean
+	@Column({ type: DataType.INTEGER, defaultValue: 5, allowNull: true })
+	loginAttempt!: number
+	@Column({ type: DataType.DATE, allowNull: true })
+	loginBlockedTime!: Date | null
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	isLoginBlocked!: boolean
+	@Column({ type: DataType.INTEGER, defaultValue: 5, allowNull: true })
+	otpMobileLimit!: number
+	@Column({ type: DataType.DATE, allowNull: true })
+	mobileOtpBlockTime!: Date | null
+	@Column({ type: DataType.BOOLEAN, defaultValue: false })
+	mobileOtpBlocked!: boolean
+	@Column({ type: DataType.INTEGER, defaultValue: 3, allowNull: true })
+	incorrectOtpAttempt!: number
+	@Column({ type: DataType.DATE, allowNull: true })
+	passwordChangedAt!: Date | null
+	@Column({ type: DataType.DATE, allowNull: true })
+	passwordChangeByUserTokenCreatedAt!: Date | null
 	@Column
 	userType!: string
 	@Column({ defaultValue: false })

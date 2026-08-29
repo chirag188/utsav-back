@@ -14,20 +14,12 @@ export default interface ConfigInterface {
 		SES_CC_EMAIL: string
 		SNS_ORIGINATION_NO: string
 	}
-	SENDGRID: {
-		API_KEY: string
-		SRC_EMAIL: string
-		TEMPLATES: {
-			VERIFY_EMAIL_OTP: string
-			RESET_PASSWORD_URL: string
-			VERIFY_EMAIL_URL: string
-			KYB_URL: string
-			AGREEMENT_URL: string
-			ERTCA_URL: string
-			NEW_DEVICE_LOGIN_URL: string
-			KYB_SUBMIT_URL: string
-			RESUBMIT_KYB_URL: string
-		}
+	EMAIL: {
+		HOST: string
+		PORT: string
+		USER: string
+		PASS: string
+		FROM: string
 	}
 	DB: {
 		DB_NAME: string | undefined

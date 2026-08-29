@@ -14,8 +14,13 @@ class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> 
 	@Column
 	karykar1profileId?: string
 
+	@ForeignKey(() => User)
 	@Column({ allowNull: true, type: DataType.STRING })
 	karykar2profileId?: string | null
+
+	@ForeignKey(() => User)
+	@Column({ allowNull: true, type: DataType.STRING })
+	karykar3profileId?: string | null
 
 	@Column({ unique: true })
 	vrundName?: string
@@ -34,11 +39,22 @@ class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> 
 	@BelongsTo(() => User, { foreignKey: 'karykar2profileId' })
 	karykar2profile!: User[]
 
+	@BelongsTo(() => User, { foreignKey: 'karykar3profileId' })
+	karykar3profile!: User[]
+
 	@BeforeCreate
 	@BeforeUpdate
 	static normalizeKarykar2profileId(instance: SamparkVrund) {
 		if (instance.karykar2profileId === undefined) {
 			instance.karykar2profileId = null
+		}
+	}
+
+	@BeforeCreate
+	@BeforeUpdate
+	static normalizeKarykar3profileId(instance: SamparkVrund) {
+		if (instance.karykar3profileId === undefined) {
+			instance.karykar3profileId = null
 		}
 	}
 }

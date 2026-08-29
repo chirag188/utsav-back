@@ -34,6 +34,9 @@ import {
 	deleteSocApi,
 	migrateSocApi,
 	getKarykarmAPI,
+	forgotPasswordApi,
+	verifyForgotPasswordOtpApi,
+	updatePasswordApi,
 } from '@user/controller'
 import authorize from '@middlewares/authorize'
 
@@ -41,6 +44,9 @@ const router = Router()
 
 router.get('/wakeUp', wakeUpApi)
 router.post('/login', loginApi)
+router.post('/forgotPassword', forgotPasswordApi)
+router.post('/verifyForgotPasswordOtp', verifyForgotPasswordOtpApi)
+router.post('/updatePassword', updatePasswordApi)
 router.use(authorize)
 router.post('/create', createUserApi)
 router.put('/updateUser', createUserApi)

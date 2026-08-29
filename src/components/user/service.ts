@@ -1,6 +1,8 @@
 import bcrypt from 'bcrypt'
+import crypto from 'crypto'
 import { v4 as uuid } from 'uuid'
 import { Logger } from '@config/logger'
+import Config from '@config/config'
 import { KarykarmInterface, UserInterface, satsangProfileInterface } from '@interfaces/user'
 import User from '@user/user.model'
 import SatsangProfile from '@user/SatsangProfile.model'
@@ -13,6 +15,8 @@ import Seva from './Seva.model'
 import SevaAllocated from './SevaAllocated.model'
 import moment from 'moment'
 import SocTable from './soc.model'
+import { sendEmail } from '@helpers/email'
+import Messages from '@helpers/messages'
 
 const USER_PUBLIC_FIELDS = [
 	'email',
@@ -43,6 +47,17 @@ export const upsertUser = async (payload: UserInterface) => {
 		if (payload.socId === '') {
 			payload.socId = null
 		}
+
+		const shouldSetPassword =
+			!payload.id || (payload.password && !payload.password.startsWith('$2'))
+		if (shouldSetPassword) {
+			const rawPassword =
+				payload.password ||
+				Config.SUPPORT_USER.DEFAULT_USER_PASSWORD ||
+				crypto.randomBytes(8).toString('hex')
+			payload.password = await bcrypt.hash(rawPassword, 10)
+		}
+
 		return upsert(User, payload.id ? { id: payload.id } : { mobileNumber: payload.mobileNumber }, {
 			...payload,
 			...(payload?.id
@@ -150,9 +165,12 @@ export const upsertSatsangProfile = async (payload: satsangProfileInterface) => 
 
 export const upsertSamparkVrund = async (payload: any) => {
 	try {
-		// If karykar2profileId is not available, empty, or "", set it to null
+		// If karykar2profileId or karykar3profileId is not available, empty, or "", set it to null
 		if (!payload.karykar2profileId || payload.karykar2profileId === '') {
 			payload.karykar2profileId = null
+		}
+		if (!payload.karykar3profileId || payload.karykar3profileId === '') {
+			payload.karykar3profileId = null
 		}
 
 		// Find existing SamparkVrund based on mandal and karykar IDs
@@ -163,9 +181,12 @@ export const upsertSamparkVrund = async (payload: any) => {
 				[Op.or]: [
 					{ karykar1profileId: payload.karykar1profileId },
 					payload.karykar2profileId && { karykar2profileId: payload.karykar2profileId },
+					payload.karykar3profileId && { karykar3profileId: payload.karykar3profileId },
 					payload.karykar2profileId && { karykar1profileId: payload.karykar2profileId },
+					payload.karykar3profileId && { karykar1profileId: payload.karykar3profileId },
 					{ karykar2profileId: payload.karykar1profileId },
-				].filter(Boolean), // remove false entries if karykar2profileId is undefined
+					{ karykar3profileId: payload.karykar1profileId },
+				].filter(Boolean), // remove false entries if karykar2profileId / karykar3profileId is undefined
 			},
 			payload
 		)
@@ -231,16 +252,15 @@ export const getUserService = async (filter: Partial<UserInterface>) => {
 			raw: true,
 		})
 		if (!user) return null
-		// if (user?.dataValues?.userType === 'karykar') {
+
 		const samparkVrund = await SamparkVrund.findOne({
 			where: {
-				[Op.or]: [{ karykar1profileId: filter.id }, { karykar2profileId: filter.id }],
+				[Op.or]: [{ karykar1profileId: filter.id }, { karykar2profileId: filter.id }, { karykar3profileId: filter.id }],
 			},
 		})
 		if (samparkVrund) {
 			return { ...user, samparkVrund: samparkVrund?.dataValues?.vrundName }
 		}
-		// }
 		return user || null
 	} catch (err) {
 		Logger.error(err)
@@ -256,6 +276,7 @@ export const getAllSamparkVrund = async (mandal: string) => {
 			include: [
 				{ model: User, as: 'karykar1profile', attributes: USER_PUBLIC_FIELDS },
 				{ model: User, as: 'karykar2profile', attributes: USER_PUBLIC_FIELDS },
+				{ model: User, as: 'karykar3profile', attributes: USER_PUBLIC_FIELDS },
 				{ model: SocTable, as: 'societies' },
 			],
 			order: [['vrundName', 'ASC']],
@@ -530,7 +551,7 @@ export const getAttendanceReport = async (
 									model: SamparkVrund,
 									as: 'samparkVrund',
 									required: !!samparkVrundWhere,
-									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId'],
+									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId', 'karykar3profileId'],
 									where: samparkVrundWhere,
 								},
 							],
@@ -605,7 +626,7 @@ export const getAllKarykarm = async (mandal: string | any) => {
 // 									model: SamparkVrund,
 // 									as: 'samparkVrund',
 // 									required: false,
-// 									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId'],
+// 									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId', 'karykar3profileId'],
 // 									include: [
 // 										{
 // 											model: User,
@@ -761,7 +782,8 @@ export const getFollowUpList = async (
 	orderType: string,
 	followUpStart: string,
 	mandal: string | any,
-	karykarmId: string | any
+	karykarmId: string | any,
+	activeGroup?: boolean | any
 ) => {
 	try {
 		let options: any = {
@@ -783,6 +805,7 @@ export const getFollowUpList = async (
 					required: true, // Set to false if you want to include FollowUp records even if User isn't found
 					where: {
 						...(mandal && { mandal }),
+						...(activeGroup !== undefined && { activeGroup }),
 						// activeGroup: false,
 						...(userType && { userType }),
 						[Op.or]: [
@@ -805,7 +828,7 @@ export const getFollowUpList = async (
 									where: {
 										...(samparkVrund && { vrundName: samparkVrund }),
 									},
-									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId'],
+									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId', 'karykar3profileId'],
 									include: [
 										{
 											model: User,
@@ -815,6 +838,11 @@ export const getFollowUpList = async (
 										{
 											model: User,
 											as: 'karykar2profile',
+											attributes: ['id', 'firstname', 'lastname'],
+										},
+										{
+											model: User,
+											as: 'karykar3profile',
 											attributes: ['id', 'firstname', 'lastname'],
 										},
 									],
@@ -1094,6 +1122,184 @@ export const login = async (filter: Partial<UserInterface>) => {
 	}
 }
 
+const getUserByIdentifier = async (payload: { email?: string; mobileNumber?: string | number }) => {
+	const lookup = payload?.email?.trim().toLowerCase()
+	const mobile =
+		payload?.mobileNumber !== undefined && payload?.mobileNumber !== null
+			? Number(payload.mobileNumber)
+			: null
+
+	const where = lookup
+		? { email: lookup }
+		: mobile !== null && !Number.isNaN(mobile)
+			? { mobileNumber: mobile }
+			: {}
+
+	if (!Object.keys(where).length) return null
+
+	const user = await User.findOne({ where })
+	return user
+}
+
+export const forgotPassword = async (payload: {
+	email?: string
+	mobileNumber?: string | number
+}) => {
+	try {
+		const user = await getUserByIdentifier(payload)
+		if (!user) {
+			return { error: Messages.FORGOT_PASSWORD_EMAIL_NOT_FOUND }
+		}
+
+		if (!user.dataValues.email) {
+			return { error: Messages.FORGOT_PASSWORD_EMAIL_NOT_FOUND }
+		}
+
+		const otpCode = Math.floor(100000 + Math.random() * 900000)
+		const otpExpire = new Date(Date.now() + 10 * 60 * 1000)
+		const passwordResetExpired = new Date(Date.now() + 60 * 60 * 1000)
+
+		await user.update({
+			otpCode,
+			otpExpire,
+			passwordResetExpired,
+			forgotPasswordLimit: 0,
+			forgotPasswordBlockTime: new Date(),
+			linkSentBlocked: false,
+		})
+
+		const res = await sendEmail({
+			data: `Your password reset OTP is ${otpCode}. It will expire in 10 minutes.`,
+			email: user.dataValues.email,
+			subject: 'Password Reset OTP',
+			body: `Your password reset OTP is ${otpCode}. It will expire in 10 minutes.`,
+		})
+
+		if (res?.success)
+			return {
+				success: true,
+				message: Messages.PASSWORD_RESET_LINK_SENT_EMAIL,
+				data: { email: user.dataValues.email },
+			}
+		return {
+			success: false,
+			message: 'Failed to send mail',
+			data: { email: user.dataValues.email },
+		}
+	} catch (error) {
+		Logger.error('Forgot password error:', error)
+		return { error: Messages.INTERNAL_SERVER_ERROR }
+	}
+}
+
+export const verifyForgotPasswordOtp = async (payload: {
+	email?: string
+	mobileNumber?: string | number
+	otpCode?: string | number
+}) => {
+	try {
+		const user = await getUserByIdentifier(payload)
+
+		if (!user) {
+			return { error: Messages.FORGOT_PASSWORD_EMAIL_NOT_FOUND }
+		}
+
+		const otpCode = Number(payload.otpCode)
+		if (!otpCode || Number(user.dataValues.otpCode) !== otpCode) {
+			return { error: Messages.INCORRECT_OTP }
+		}
+
+		if (!user.dataValues.otpExpire || new Date(user.dataValues.otpExpire) < new Date()) {
+			return { error: Messages.OTP_EXPIRED }
+		}
+
+		await user.update({
+			passwordResetExpired: new Date(Date.now() + 15 * 60 * 1000),
+		})
+
+		return {
+			success: true,
+			message: 'OTP verified successfully',
+			data: { verified: true },
+		}
+	} catch (error) {
+		Logger.error('Verify forgot password OTP error:', error)
+		return { error: Messages.INTERNAL_SERVER_ERROR }
+	}
+}
+
+export const updatePassword = async (payload: {
+	email?: string
+	mobileNumber?: string | number
+	otpCode?: string | number
+	password?: string
+}) => {
+	try {
+		const user = await getUserByIdentifier(payload)
+		if (!user) {
+			return { error: Messages.FORGOT_PASSWORD_EMAIL_NOT_FOUND }
+		}
+
+		const otpCode = Number(payload.otpCode)
+		if (!otpCode || Number(user.dataValues.otpCode) !== otpCode) {
+			return { error: Messages.INCORRECT_OTP }
+		}
+
+		if (!user.dataValues.otpExpire || new Date(user.dataValues.otpExpire) < new Date()) {
+			return { error: Messages.OTP_EXPIRED }
+		}
+
+		if (!payload.password || payload.password.length < 4) {
+			return { error: 'Password must be at least 4 characters long' }
+		}
+
+		if (await verifyPassword(payload.password, user.dataValues.password || '')) {
+			return { error: Messages.RESET_SAME_PASSWORD }
+		}
+
+		const hashedPassword = await bcrypt.hash(payload.password, 10)
+		await user.update({
+			password: hashedPassword,
+			otpCode: null,
+			otpExpire: null,
+			passwordResetExpired: null,
+		})
+
+		return {
+			success: true,
+			message: Messages.CHANGE_PASSWORD_SUCCESS,
+			data: { updated: true },
+		}
+	} catch (error) {
+		Logger.error('Update password error:', error)
+		return { error: Messages.INTERNAL_SERVER_ERROR }
+	}
+}
+
+export const saveMobileOTP = async (
+	mobileNumber: number,
+	countryCode: string,
+	email: string,
+	otpCode: number
+) => {
+	try {
+		const user = await User.findOne({ where: { email } })
+		if (!user) return null
+
+		await user.update({
+			mobileNumber,
+			mobileUser: `${countryCode}${mobileNumber}`,
+			otpCode,
+			otpExpire: new Date(Date.now() + 10 * 60 * 1000),
+		})
+
+		return user
+	} catch (error) {
+		Logger.error('saveMobileOTP error:', error)
+		return null
+	}
+}
+
 export const verifyPassword = async (
 	enteredPassword: string,
 	storedPassword: string
@@ -1108,7 +1314,6 @@ export const verifyPassword = async (
 
 export const upsertSoc = async (payload: any) => {
 	try {
-		console.log(payload)
 		if (payload.id) {
 			// Update existing society
 			const existingSoc = await SocTable.findOne({ where: { id: payload.id } })
@@ -1244,7 +1449,6 @@ export const migrateSocieties = async () => {
 
 			if (isExist) {
 				if (!soc.socId?.trim()) {
-					console.log(`Society exists: ${isExist.dataValues.id}, ${soc.id}`)
 					await User.update(userUpdatePayload, { where: { id: soc.id } })
 				}
 			} else {
@@ -1301,7 +1505,6 @@ export const migrateSocieties = async () => {
 
 	// 	await Promise.all(updates)
 	// 	offset += limit
-	// 	console.log(`Updated ${offset} users...`)
 	// }
 
 	return { message: 'Society migration completed successfully!' }

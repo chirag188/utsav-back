@@ -36,6 +36,9 @@ import {
 	upsertSatsangProfile,
 	upsertUser,
 	verifyPassword,
+	forgotPassword,
+	verifyForgotPasswordOtp,
+	updatePassword,
 	upsertSoc,
 	getKarykarm,
 } from '@user/service'
@@ -441,6 +444,63 @@ export const loginApi = async (req: Request, res: Response) => {
 	}
 }
 
+export const forgotPasswordApi = async (req: Request, res: Response) => {
+	try {
+		const result = await forgotPassword(req.body)
+		if (result?.error) {
+			return errorHandler({ res, statusCode: 502, err: result.error })
+		}
+
+		return responseHandler({
+			res,
+			status: result?.success ? 200 : 400,
+			msg: result?.message || Messages.PASSWORD_RESET_LINK_SENT_EMAIL,
+			data: result?.data,
+		})
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const verifyForgotPasswordOtpApi = async (req: Request, res: Response) => {
+	try {
+		const result = await verifyForgotPasswordOtp(req.body)
+		if (result?.error) {
+			return errorHandler({ res, statusCode: 502, err: result.error })
+		}
+
+		return responseHandler({
+			res,
+			status: 200,
+			msg: result?.message || 'OTP verified successfully',
+			data: result?.data,
+		})
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
+export const updatePasswordApi = async (req: Request, res: Response) => {
+	try {
+		const result = await updatePassword(req.body)
+		if (result?.error) {
+			return errorHandler({ res, statusCode: 502, err: result.error })
+		}
+
+		return responseHandler({
+			res,
+			status: 200,
+			msg: result?.message || Messages.CHANGE_PASSWORD_SUCCESS,
+			data: result?.data,
+		})
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
 // export const verifyLogin = async (req: Request, res: Response) => {
 // 	try {
 // 		const {
@@ -649,6 +709,21 @@ export const getAllUserAPI = async (req: Request, res: Response) => {
 	}
 }
 
+export const getAttendanceListApi = async (req: Request, res: Response) => {
+	try {
+		const { userId = '', mandal = '' } = req.query as Record<string, string>
+		const attendanceList = await getAttendanceList(userId, mandal)
+
+		if (!attendanceList)
+			return errorHandler({ res, err: 'Attendance List Not Found', statusCode: 502 })
+
+		return responseHandler({ res, msg: 'Attendance list found', data: attendanceList })
+	} catch (error) {
+		Logger.error(error)
+		return errorHandler({ res, statusCode: 400, data: { error } })
+	}
+}
+
 export const getAttendanceReportAPI = async (req: Request, res: Response) => {
 	try {
 		const {
@@ -744,6 +819,7 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 			orderType = 'ASC',
 			followUpStart = '',
 			karykarmId = '',
+			activeGroup,
 		} = req.query as Record<string, string>
 
 		const followUpList = await getFollowUpList(
@@ -760,28 +836,14 @@ export const getFollowUpListApi = async (req: Request, res: Response) => {
 			orderType,
 			followUpStart,
 			mandal,
-			karykarmId
+			karykarmId,
+			activeGroup !== undefined ? activeGroup === 'true' : undefined
 		)
 
 		if (!followUpList)
 			return errorHandler({ res, err: 'Follow Up List Not Found', statusCode: 502 })
+
 		return responseHandler({ res, msg: 'Follow Up list found', data: followUpList })
-	} catch (error) {
-		Logger.error(error)
-		return errorHandler({ res, statusCode: 400, data: { error } })
-	}
-}
-
-export const getAttendanceListApi = async (req: Request, res: Response) => {
-	try {
-		const userId = req?.user?.id
-		const mandal = req?.user?.mandal
-		if (!userId) return errorHandler({ res, err: Messages.USER_NOT_FOUND, statusCode: 501 })
-
-		const attendanceList = await getAttendanceList(userId, mandal)
-		if (!attendanceList) return errorHandler({ res, err: Messages.USER_NOT_FOUND, statusCode: 502 })
-
-		return responseHandler({ res, msg: Messages.GET_USER_SUCCESS, data: attendanceList })
 	} catch (error) {
 		Logger.error(error)
 		return errorHandler({ res, statusCode: 400, data: { error } })
