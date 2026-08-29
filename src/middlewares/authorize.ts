@@ -1,10 +1,8 @@
-import axios from 'axios'
-
-import Config from '@config/config'
 import { Logger } from '@config/logger'
 import messages from '@helpers/messages'
 import { errorHandler } from '@helpers/responseHandlers'
 import { NextFunction, Request, Response } from 'express'
+import { verifyToken } from '@helpers/jwt'
 
 const authorize = async (req: Request, res: Response, next: NextFunction) => {
 	Logger.info('Authorize URL')
@@ -17,23 +15,15 @@ const authorize = async (req: Request, res: Response, next: NextFunction) => {
 			})
 		}
 
-		const result: any = await axios
-			.get(Config.AUTH.VERIFY_TOKEN, {
-				headers: {
-					authorization: req.headers.authorization,
-				},
-			})
-			.catch((err) => {
-				throw err
-			})
+		const token = req?.headers?.authorization?.split(' ')[1]!
 
-		const user = result.data?.data
-		req.user = user
+		const result: any = await verifyToken(token)
+		req.user = result
 		return next()
 	} catch (error: any) {
 		Logger.error(error)
 
-		const errorMessage = error.response.data.msg
+		const errorMessage = error.response?.data.msg
 		if (
 			error?.response?.status === 401 ||
 			['invalid signature', 'jwt expired'].includes(errorMessage)

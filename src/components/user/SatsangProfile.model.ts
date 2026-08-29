@@ -5,53 +5,51 @@ import { Table, Model, Column, ForeignKey, BelongsTo } from 'sequelize-typescrip
 import { satsangProfileInterface } from '@interfaces/user'
 import User from '@user/user.model'
 // import { afterCreateHooks } from './hooks'
-interface SatsangProfileAttributes extends Optional<satsangProfileInterface, 'id'> {}
+interface SatsangProfileAttributes extends Optional<satsangProfileInterface, 'userId'> {}
 
 @Table({ timestamps: true })
 class SatsangProfile extends Model<satsangProfileInterface, SatsangProfileAttributes> {
+	@ForeignKey(() => User)
 	@Column({ primaryKey: true })
-	id!: string
-	@Column
-	yuvakProfile!: string
-	@Column({ defaultValue: true })
+	userId!: string
+	@Column({ defaultValue: false })
 	nityaPuja!: boolean
 	@Column
 	nityaPujaYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	tilakChandlo!: boolean
 	@Column
 	tilakChandloYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	satsangi!: boolean
 	@Column
 	satsangiYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	athvadikSabha!: boolean
 	@Column
 	athvadikSabhaYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	raviSabha!: boolean
 	@Column
 	raviSabhaYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	gharSatsang!: boolean
 	@Column
 	gharSatsangYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	ssp!: boolean
 	@Column
 	sspStage!: string
-	@Column({ defaultValue: true })
+	@Column
+	sspYear!: number
+	@Column({ defaultValue: false })
 	ekadashi!: boolean
 	@Column
 	ekadashiYear!: number
-	@Column({ defaultValue: true })
+	@Column({ defaultValue: false })
 	niymitVanchan!: boolean
 	@Column
 	niymitVanchanYear!: number
-	@ForeignKey(() => User)
-	@Column
-	userId!: string
 
 	@BelongsTo(() => User)
 	user!: User

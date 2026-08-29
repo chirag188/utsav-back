@@ -1,6 +1,7 @@
 export default {
 	ADMIN_CREATED_SUCCESS: 'Admin Created Successfully',
 	YUVAK_CREATED_SUCCESS: 'Yuvak Created Successfully',
+	SAMPARK_VRUND_SUCCESS: 'Smapark Vrund Successfully',
 	YUVAK_UPDATED_SUCCESS: 'Yuvak Updated Successfully',
 	ADMIN_UPDATE_SUCCESS: 'Admin Update Successfully',
 	YUVAK_SATSANG_PROFILE_SUCCESS: 'Yuvak Satsang Profile Updated Successfully',

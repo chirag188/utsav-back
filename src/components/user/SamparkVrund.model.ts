@@ -1,48 +1,62 @@
 import { Optional } from 'sequelize'
-
-import {
-	Table,
-	Model,
-	Column,
-	BelongsTo,
-	ForeignKey,
-	HasMany,
-	DataType,
-	AutoIncrement,
-} from 'sequelize-typescript'
-
+import { Table, Model, Column, BelongsTo, ForeignKey, HasMany, DataType, BeforeCreate, BeforeUpdate } from 'sequelize-typescript'
 import { SamparkVrundInterface } from '@interfaces/user'
 import User from './user.model'
-// import { afterCreateHooks } from './hooks'
+import SocTable from './soc.model'
 interface samparkVrundAttributes extends Optional<SamparkVrundInterface, 'id'> {}
 
 @Table({ timestamps: true })
 class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> {
-	@AutoIncrement
-	@Column({
-		primaryKey: true,
-		type: DataType.INTEGER,
-	})
-	id!: number
-	@ForeignKey(() => User)
-	@Column
-	karykar1profileId!: string
-	@ForeignKey(() => User)
-	@Column
-	karykar2profileId!: string
-	@Column
-	vrundName!: string
-	@Column({ type: DataType.ARRAY(DataType.STRING) })
-	socs!: string[]
-	// @Column({ type: DataType.ARRAY(DataType.STRING) })
-	// yuvaks!: string[]
+	@Column({ primaryKey: true })
+	id?: string
 
-	@BelongsTo(() => User, 'karykar1profileId')
+	@ForeignKey(() => User)
+	@Column
+	karykar1profileId?: string
+
+	@ForeignKey(() => User)
+	@Column({ allowNull: true, type: DataType.STRING })
+	karykar2profileId?: string | null
+
+	@ForeignKey(() => User)
+	@Column({ allowNull: true, type: DataType.STRING })
+	karykar3profileId?: string | null
+
+	@Column({ unique: true })
+	vrundName?: string
+
+	@Column
+	mandal?: string
+
+	@HasMany(() => SocTable, {
+		onDelete: 'SET NULL', // When `SamparkVrund` is deleted, set `socId` to null instead of deleting the societies
+	})
+	societies!: SocTable[]
+
+	@BelongsTo(() => User, { foreignKey: 'karykar1profileId' })
 	karykar1profile!: User[]
-	@BelongsTo(() => User, 'karykar2profileId')
+
+	@BelongsTo(() => User, { foreignKey: 'karykar2profileId' })
 	karykar2profile!: User[]
-	// @HasMany(() => User, 'yuvaks')
-	// yuvaksList!: any[]
+
+	@BelongsTo(() => User, { foreignKey: 'karykar3profileId' })
+	karykar3profile!: User[]
+
+	@BeforeCreate
+	@BeforeUpdate
+	static normalizeKarykar2profileId(instance: SamparkVrund) {
+		if (instance.karykar2profileId === undefined) {
+			instance.karykar2profileId = null
+		}
+	}
+
+	@BeforeCreate
+	@BeforeUpdate
+	static normalizeKarykar3profileId(instance: SamparkVrund) {
+		if (instance.karykar3profileId === undefined) {
+			instance.karykar3profileId = null
+		}
+	}
 }
 
 export default SamparkVrund

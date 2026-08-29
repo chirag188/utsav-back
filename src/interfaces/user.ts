@@ -1,34 +1,66 @@
 export interface UserInterface {
 	id: string
+	appId?: string
 	// username?: string
 	firstname: string
 	middlename?: string
 	lastname: string
 	mobileNumber: number
 	mobileUser?: string
+	userLevel?: string
 	houseNumber?: string
 	socName?: string
 	nearBy?: string
 	area?: string
 	married?: boolean
+	app?: boolean
+	active?: boolean
+	deleteReason?: string
 	education?: string
 	mandal?: string
 	email?: string
 	seva?: string
 	sevaIntrest?: string
 	password?: string
-	userType: 'Karykar' | 'Yuvak' | 'Nirikshak' | 'Sanchalak'
-	profilePic?: string
+	userType: 'karykar' | 'yuvak' | 'admin' | 'superadmin' | 'nirikshak' | 'sanchalak'
+	profilePic?: any
 	DOB?: Date
-	addressLine1?: string
 	gender: string
 	samparkVrund?: string
-	// fcmToken?: string
+	token?: string
+	otpCode?: number | null
+	otpExpire?: Date | null
+	passwordResetExpired?: Date | null
+	forgotPasswordLimit?: number
+	forgotPasswordBlockTime?: Date | null
+	linkSentBlocked?: boolean
+	otpLimit?: number
+	otpBlockTime?: Date | null
+	isOTPBlocked?: boolean
+	loginAttempt?: number
+	loginBlockedTime?: Date | null
+	isLoginBlocked?: boolean
+	otpMobileLimit?: number
+	mobileOtpBlockTime?: Date | null
+	mobileOtpBlocked?: boolean
+	incorrectOtpAttempt?: number
+	job?: string
+	business?: string
+	occupation?: string
+	occupationFiled?: string
+	fatherOccupation?: string
+	fatherOccupationFiled?: string
+	fatherMobileNumber?: number
+	district?: string
+	taluka?: string
+	village?: string
+	socId?: string | null
+	activeGroup?: boolean
+	passwordChangedAt?: Date | null
+	passwordChangeByUserTokenCreatedAt?: Date | null
 }
 
 export interface satsangProfileInterface {
-	id: string
-	yuvakProfile?: string
 	nityaPuja?: boolean
 	nityaPujaYear?: number
 	tilakChandlo?: boolean
@@ -43,6 +75,7 @@ export interface satsangProfileInterface {
 	gharSatsangYear?: number
 	ssp?: boolean
 	sspStage?: string
+	sspYear?: number
 	ekadashi?: boolean
 	ekadashiYear?: number
 	niymitVanchan?: boolean
@@ -51,11 +84,24 @@ export interface satsangProfileInterface {
 }
 
 export interface SamparkVrundInterface {
-	id?: number
+	[x: string]: any
+	id?: string
 	karykar1profileId: string
-	karykar2profileId?: string
+	karykar2profileId?: string | any
+	karykar3profileId?: string | any
 	vrundName: string
-	socs?: string[]
+	socs?: string
+	mandal?: string
+}
+
+export interface SevaInterface {
+	id: string
+	sevaName: string
+}
+export interface SevaAllocatedInterface {
+	id: string
+	sevaId: string
+	userId: string
 }
 
 export interface KarykarmInterface {
@@ -63,17 +109,29 @@ export interface KarykarmInterface {
 	karykarmId?: number
 	karykarmName?: string
 	karykarmTime?: Date
-	followUpStart?: boolean
-	followUpEnd?: boolean
-	attendanceStart?: boolean
-	attendanceEnd?: boolean
+	followUpStart?: string
+	// followUpEnd?: boolean
+	attendanceStart?: string
+	mandal?: string
+	// attendanceEnd?: boolean
 }
 
 export interface FollowUpInterface {
 	id: string
 	followUpId?: number
-	followUp: boolean
-	attendance: boolean
-	userId: string
-	karykarmId: string
+	followUp?: boolean
+	attendance?: boolean
+	appattendance?: boolean
+	userId?: string
+	karykarmId?: string
+	coming?: boolean
+	how?: string
+	remark?: string
+	samparkVrund?: string
+}
+
+export interface ImagesInterface {
+	id: string
+	imgName?: string
+	imgValue?: Blob
 }

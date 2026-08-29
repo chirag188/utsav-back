@@ -1,14 +1,11 @@
 import { Optional } from 'sequelize'
-
-import { Table, Model, Column, AutoIncrement, DataType } from 'sequelize-typescript'
+import { Table, Model, Column, DataType, AutoIncrement, HasMany } from 'sequelize-typescript'
 
 import { KarykarmInterface } from '@interfaces/user'
-// import { afterCreateHooks } from './hooks'
 interface KarykarmAttributes extends Optional<KarykarmInterface, 'id'> {}
 
 @Table({ timestamps: true })
 class Karykarm extends Model<KarykarmInterface, KarykarmAttributes> {
-	// @AutoIncrement
 	@Column({ primaryKey: true })
 	id!: string
 	@AutoIncrement
@@ -19,16 +16,18 @@ class Karykarm extends Model<KarykarmInterface, KarykarmAttributes> {
 	karykarmId!: number
 	@Column
 	karykarmName!: string
-	@Column
+	@Column({ unique: true })
 	karykarmTime!: Date
 	@Column
-	followUpStart!: boolean
+	followUpStart!: string
 	@Column
-	followUpEnd!: boolean
+	mandal!: string
 	@Column
-	attendanceStart!: boolean
-	@Column
-	attendanceEnd!: boolean
+	attendanceStart!: string
+
+	// KEEP RELATION — this works without import
+	@HasMany(() => require('./followUp.model').default, 'karykarmId')
+	followUps!: ReturnType<typeof require>[]
 }
 
 export default Karykarm
