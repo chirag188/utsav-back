@@ -2,11 +2,21 @@ import { Table, Model, Column, DataType, ForeignKey, BelongsTo } from 'sequelize
 
 import { Optional } from 'sequelize'
 import { FollowUpInterface } from '@interfaces/user'
-import User from './user.model'
-import Karykarm from './karykarm.model'
+
+type UserType = import('./user.model').default
+type KarykarmType = import('./karykarm.model').default
+
 interface FollowUpAttributes extends Optional<FollowUpInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({
+	timestamps: true,
+	indexes: [
+		{ fields: ['userId', 'karykarmId'] },
+		{ fields: ['karykarmId', 'attendance'] },
+		{ fields: ['userId', 'attendance'] },
+		{ fields: ['attendance', 'appattendance'] },
+	],
+})
 class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	@Column({ primaryKey: true })
 	id!: string
@@ -17,10 +27,10 @@ class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	attendance!: boolean
 	@Column({ type: DataType.BOOLEAN, defaultValue: false })
 	appattendance!: boolean
-	@ForeignKey(() => User)
+	@ForeignKey(() => require('./user.model').default)
 	@Column
 	userId!: string
-	@ForeignKey(() => Karykarm)
+	@ForeignKey(() => require('./karykarm.model').default)
 	@Column
 	karykarmId!: string
 	@Column({ type: DataType.BOOLEAN })
@@ -34,11 +44,17 @@ class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	@Column({ type: DataType.STRING })
 	remark!: string
 
-	@BelongsTo(() => User, 'userId')
-	userData!: User
+	@BelongsTo(() => require('./user.model').default, {
+		foreignKey: 'userId',
+		as: 'userData',
+	})
+	userData!: UserType
 
-	@BelongsTo(() => Karykarm, 'karykarmId')
-	karykarmData!: Karykarm
+	@BelongsTo(() => require('./karykarm.model').default, {
+		foreignKey: 'karykarmId',
+		as: 'karykarmData',
+	})
+	karykarmData!: KarykarmType
 }
 
 export default FollowUp

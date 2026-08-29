@@ -7,7 +7,10 @@ import { SevaInterface } from '@interfaces/user'
 import User from './user.model'
 interface sevaAttributes extends Optional<SevaInterface, 'id'> {}
 
-@Table({ timestamps: false })
+@Table({
+	timestamps: false,
+	indexes: [{ fields: ['sevaName'] }],
+})
 class Seva extends Model<SevaInterface, sevaAttributes> {
 	@Default(() => uuid())
 	@Column({

@@ -51,7 +51,10 @@ class SatsangProfile extends Model<satsangProfileInterface, SatsangProfileAttrib
 	@Column
 	niymitVanchanYear!: number
 
-	@BelongsTo(() => User)
+	@BelongsTo(() => User, {
+		foreignKey: 'userId',
+		as: 'user',
+	})
 	user!: User
 }
 

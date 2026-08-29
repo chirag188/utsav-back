@@ -7,6 +7,8 @@ import SamparkVrund from '@user/SamparkVrund.model'
 import Karykarm from '@user/karykarm.model'
 import FollowUp from '@user/followUp.model'
 import SocModel from '@user/soc.model'
+import Seva from '@user/Seva.model'
+import SevaAllocated from '@user/SevaAllocated.model'
 
 const _database: string = Config.DB.DB_NAME!
 // const _dialect: string = Config.DB.DB_DIALECT!
@@ -21,7 +23,7 @@ const db = new Sequelize(
 	{
 		storage: ':memory:',
 		logging: (msg) => Logger.info(msg),
-		models: [user, SatsangProfile, SamparkVrund, Karykarm, FollowUp, SocModel],
+		models: [user, SatsangProfile, SamparkVrund, Karykarm, FollowUp, SocModel, Seva, SevaAllocated],
 		define: {
 			freezeTableName: true,
 		},

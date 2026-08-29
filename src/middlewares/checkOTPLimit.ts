@@ -18,7 +18,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
 					statusCode: 502,
 				})
 			}
-			if (user.isBlocked) {
+			if (user.isOTPBlocked || user.isLoginBlocked) {
 				return errorHandler({
 					res,
 					err: messages.USER_BLOCKED,
@@ -160,7 +160,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
 				statusCode: 502,
 			})
 		}
-		if (user.isBlocked) {
+		if (user.isOTPBlocked || user.isLoginBlocked) {
 			return errorHandler({
 				res,
 				err: messages.USER_BLOCKED,

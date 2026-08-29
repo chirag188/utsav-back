@@ -9,15 +9,27 @@ import {
 	AfterUpdate,
 	ForeignKey,
 	BelongsTo,
+	Index,
 } from 'sequelize-typescript'
 
 import { UserInterface } from '@interfaces/user'
 import { afterCreateHooks, afterUpdateHooks } from './hooks'
-import SocTable from './soc.model'
+
+type SocTableType = import('./soc.model').default
 
 interface UserAttributes extends Optional<UserInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({
+	timestamps: true,
+	indexes: [
+		{ fields: ['mobileNumber'] },
+		{ fields: ['email'] },
+		{ fields: ['socId'] },
+		{ fields: ['mandal', 'userType', 'active'] },
+		{ fields: ['userType', 'active'] },
+		{ fields: ['activeGroup'] },
+	],
+})
 class User extends Model<UserInterface, UserAttributes> {
 	@Column({ primaryKey: true })
 	id!: string
@@ -133,15 +145,19 @@ class User extends Model<UserInterface, UserAttributes> {
 	sevaList!: string[]
 
 	// Add society relation
-	@ForeignKey(() => SocTable)
+	@ForeignKey(() => require('./soc.model').default)
 	@Column({
-		type: DataType.STRING, // <--- ADD THIS
+		type: DataType.STRING,
 		allowNull: true,
 	})
 	socId!: string | null
 
-	@BelongsTo(() => SocTable)
-	society!: SocTable
+	@BelongsTo(() => require('./soc.model').default, {
+		foreignKey: 'socId',
+		as: 'society',
+		onDelete: 'SET NULL',
+	})
+	society!: SocTableType
 
 	// Hooks
 	@AfterCreate

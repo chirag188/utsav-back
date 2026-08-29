@@ -1,24 +1,36 @@
 import { Optional } from 'sequelize'
-import { Table, Model, Column, BelongsTo, ForeignKey, HasMany, DataType, BeforeCreate, BeforeUpdate } from 'sequelize-typescript'
+import { v4 as uuid } from 'uuid'
+import { Table, Model, Column, BelongsTo, ForeignKey, HasMany, DataType, BeforeCreate, BeforeUpdate, Default } from 'sequelize-typescript'
 import { SamparkVrundInterface } from '@interfaces/user'
-import User from './user.model'
-import SocTable from './soc.model'
+
+type UserType = import('./user.model').default
+type SocTableType = import('./soc.model').default
+
 interface samparkVrundAttributes extends Optional<SamparkVrundInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({
+	timestamps: true,
+	indexes: [
+		{ fields: ['mandal', 'vrundName'] },
+		{ fields: ['karykar1profileId'] },
+		{ fields: ['karykar2profileId'] },
+		{ fields: ['karykar3profileId'] },
+	],
+})
 class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> {
-	@Column({ primaryKey: true })
+	@Default(() => uuid())
+	@Column({ primaryKey: true, type: DataType.STRING })
 	id?: string
 
-	@ForeignKey(() => User)
+	@ForeignKey(() => require('./user.model').default)
 	@Column
 	karykar1profileId?: string
 
-	@ForeignKey(() => User)
+	@ForeignKey(() => require('./user.model').default)
 	@Column({ allowNull: true, type: DataType.STRING })
 	karykar2profileId?: string | null
 
-	@ForeignKey(() => User)
+	@ForeignKey(() => require('./user.model').default)
 	@Column({ allowNull: true, type: DataType.STRING })
 	karykar3profileId?: string | null
 
@@ -28,32 +40,30 @@ class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> 
 	@Column
 	mandal?: string
 
-	@HasMany(() => SocTable, {
-		onDelete: 'SET NULL', // When `SamparkVrund` is deleted, set `socId` to null instead of deleting the societies
+	@HasMany(() => require('./soc.model').default, {
+		foreignKey: 'samparkVrundId',
+		as: 'societies',
+		onDelete: 'SET NULL',
 	})
-	societies!: SocTable[]
+	societies!: SocTableType[]
 
-	@BelongsTo(() => User, { foreignKey: 'karykar1profileId' })
-	karykar1profile!: User[]
+	@BelongsTo(() => require('./user.model').default, { foreignKey: 'karykar1profileId', as: 'karykar1profile' })
+	karykar1profile!: UserType
 
-	@BelongsTo(() => User, { foreignKey: 'karykar2profileId' })
-	karykar2profile!: User[]
+	@BelongsTo(() => require('./user.model').default, { foreignKey: 'karykar2profileId', as: 'karykar2profile' })
+	karykar2profile!: UserType
 
-	@BelongsTo(() => User, { foreignKey: 'karykar3profileId' })
-	karykar3profile!: User[]
+	@BelongsTo(() => require('./user.model').default, { foreignKey: 'karykar3profileId', as: 'karykar3profile' })
+	karykar3profile!: UserType
 
 	@BeforeCreate
 	@BeforeUpdate
-	static normalizeKarykar2profileId(instance: SamparkVrund) {
-		if (instance.karykar2profileId === undefined) {
+	static normalizeCoordinatorIds(instance: SamparkVrund) {
+		// Normalize optional coordinator IDs to null if undefined or empty
+		if (instance.karykar2profileId === undefined || instance.karykar2profileId === '') {
 			instance.karykar2profileId = null
 		}
-	}
-
-	@BeforeCreate
-	@BeforeUpdate
-	static normalizeKarykar3profileId(instance: SamparkVrund) {
-		if (instance.karykar3profileId === undefined) {
+		if (instance.karykar3profileId === undefined || instance.karykar3profileId === '') {
 			instance.karykar3profileId = null
 		}
 	}

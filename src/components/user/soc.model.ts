@@ -7,10 +7,18 @@ import {
 	DataType,
 	BelongsTo,
 } from 'sequelize-typescript'
-import User from './user.model'
-import SamparkVrund from './SamparkVrund.model'
 
-@Table({ timestamps: false })
+type UserType = import('./user.model').default
+
+type SamparkVrundType = import('./SamparkVrund.model').default
+
+@Table({
+	timestamps: false,
+	indexes: [
+		{ fields: ['socName', 'area'] },
+		{ fields: ['samparkVrundId'] },
+	],
+})
 class SocTable extends Model<any, any> {
 	@Column({ primaryKey: true, type: DataType.STRING })
 	id!: string
@@ -19,21 +27,26 @@ class SocTable extends Model<any, any> {
 	@Column
 	area!: string
 	// A society belongs to one SamparkVrund
-	@ForeignKey(() => SamparkVrund)
+	@ForeignKey(() => require('./SamparkVrund.model').default)
 	@Column({
 		type: DataType.STRING,
-		allowNull: true, // This must be set to true to allow setting it to null
+		allowNull: true,
 		onDelete: 'SET NULL',
 	})
 	samparkVrundId!: string
 
-	@BelongsTo(() => SamparkVrund, {
+	@BelongsTo(() => require('./SamparkVrund.model').default, {
+		foreignKey: 'samparkVrundId',
+		as: 'samparkVrund',
 		onDelete: 'SET NULL',
 	})
-	samparkVrund!: SamparkVrund
+	samparkVrund!: SamparkVrundType
 
-	@HasMany(() => User)
-	users!: User[]
+	@HasMany(() => require('./user.model').default, {
+		foreignKey: 'socId',
+		as: 'users',
+	})
+	users!: UserType[]
 }
 
 export default SocTable

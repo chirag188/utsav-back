@@ -16,7 +16,10 @@ import User from './user.model'
 import Seva from './Seva.model'
 interface sevaAllocatedAttributes extends Optional<SevaAllocatedInterface, 'id'> {}
 
-@Table({ timestamps: false })
+@Table({
+	timestamps: false,
+	indexes: [{ fields: ['userId'] }, { fields: ['sevaId'] }],
+})
 class SevaAllocated extends Model<SevaAllocatedInterface, sevaAllocatedAttributes> {
 	@Default(() => uuid())
 	@Column({
@@ -30,10 +33,10 @@ class SevaAllocated extends Model<SevaAllocatedInterface, sevaAllocatedAttribute
 	@ForeignKey(() => User)
 	@Column
 	userId!: string
-	@BelongsTo(() => User, 'userId')
-	userData!: User[]
-	@BelongsTo(() => Seva, 'sevaId')
-	sevaData!: Seva[]
+	@BelongsTo(() => User, { foreignKey: 'userId', as: 'userData' })
+	userData!: User
+	@BelongsTo(() => Seva, { foreignKey: 'sevaId', as: 'sevaData' })
+	sevaData!: Seva
 }
 
 export default SevaAllocated
