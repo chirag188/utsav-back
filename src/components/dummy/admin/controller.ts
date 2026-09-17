@@ -20,13 +20,13 @@ export const testController = async (req: Request, res: Response) => {
 export const createAdmin = async (req: Request, res: Response) => {
 	Logger.info('Inside createUser Controller')
 	try {
-		const { id, name, email }: { id: string; name: string; email: string } = req.body
+		// const { id, name, email }: { id: string; name: string; email: string } = req.body
 
-		const userObject: { id: string; name: string; email: string } = {
-			id: uuid(),
-			name,
-			email,
-		}
+		// const userObject: { id: string; name: string; email: string } = {
+		// 	id: uuid(),
+		// 	name,
+		// 	email,
+		// }
 		const user = await User.create(req.body)
 		responseHandler({ res, data: user })
 	} catch (err) {

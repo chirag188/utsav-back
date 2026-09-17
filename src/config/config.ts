@@ -22,20 +22,12 @@ const Config: ConfigInterface = {
 		SQS_QUEUE_URL: `https://sqs.${process.env.AWS_SQS_QUEUE_REGION}.amazonaws.com/${process.env.AWS_ACCOUNT_ID}`,
 		SNS_ORIGINATION_NO: process.env.AWS_SNS_ORIGINATION_NO!,
 	},
-	SENDGRID: {
-		API_KEY: process.env.SENDGRID_API_KEY!,
-		SRC_EMAIL: process.env.SENDGRID_SRC_EMAIL!,
-		TEMPLATES: {
-			VERIFY_EMAIL_OTP: process.env.SENDGRID_VERIFY_EMAIL_OTP!,
-			RESET_PASSWORD_URL: process.env.SENDGRID_RESET_PASSWORD_URL!,
-			VERIFY_EMAIL_URL: process.env.SENDGRID_VERIFY_EMAIL_URL!,
-			KYB_URL: process.env.SENDGRID_KYB_URL!,
-			AGREEMENT_URL: process.env.SENDGRID_AGREEMENT_URL!,
-			ERTCA_URL: process.env.SENDGRID_ERTCA_URL!,
-			NEW_DEVICE_LOGIN_URL: process.env.SENDGRID_NEW_DEVICE_LOGIN_URL!,
-			KYB_SUBMIT_URL: process.env.SENDGRID_KYB_SUBMIT_URL!,
-			RESUBMIT_KYB_URL: process.env.SENDGRID_RESUBMIT_KYB_URL!,
-		},
+	EMAIL: {
+		HOST: process.env.EMAIL_HOST!,
+		PORT: process.env.EMAIL_PORT!,
+		USER: process.env.EMAIL_USER!,
+		PASS: process.env.EMAIL_PASS!,
+		FROM: process.env.EMAIL_FROM!,
 	},
 	DB: {
 		DB_NAME: process.env.DB_NAME,

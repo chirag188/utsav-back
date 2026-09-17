@@ -1,9 +1,13 @@
-import sgMail, { MailDataRequired } from '@sendgrid/mail'
+import sgMail from '@sendgrid/mail'
 
 import Config from '@config/config'
 import { Logger } from '@config/logger'
 
-sgMail.setApiKey(Config.SENDGRID.API_KEY)
+const apiKey = String(Config.EMAIL.PASS || '').replace(/\s+/g, '')
+
+if (apiKey) {
+	sgMail.setApiKey(apiKey)
+}
 
 export const sendEmail = async (
 	payload: {
@@ -13,88 +17,66 @@ export const sendEmail = async (
 		subject?: string
 		html?: string
 	},
-	templateName?:
-		| 'sendVerification'
-		| 'sendVerficationURL'
-		| 'sendEmailVerification'
-		| 'sendKYBLink'
-		| 'sendAgreementLink'
-		| 'sendERTCALink'
-		| 'sendKYBSubmitted'
-		| 'sendResubmitKYB'
-		| 'sendDeviceLoggedIn'
+	templateName?: string
 ) => {
 	try {
-		const { body, email, subject, html, data } = payload
-
-		const templates = {
-			sendVerification: Config.SENDGRID.TEMPLATES.VERIFY_EMAIL_OTP,
-			sendVerficationURL: Config.SENDGRID.TEMPLATES.RESET_PASSWORD_URL,
-			sendEmailVerification: Config.SENDGRID.TEMPLATES.VERIFY_EMAIL_URL,
-			sendKYBLink: Config.SENDGRID.TEMPLATES.KYB_URL,
-			sendAgreementLink: Config.SENDGRID.TEMPLATES.AGREEMENT_URL,
-			sendERTCALink: Config.SENDGRID.TEMPLATES.ERTCA_URL,
-			sendKYBSubmitted: Config.SENDGRID.TEMPLATES.KYB_SUBMIT_URL,
-			sendResubmitKYB: Config.SENDGRID.TEMPLATES.RESUBMIT_KYB_URL,
-			sendDeviceLoggedIn: Config.SENDGRID.TEMPLATES.NEW_DEVICE_LOGIN_URL,
+		if (!Config.EMAIL.PASS || !Config.EMAIL.FROM) {
+			throw new Error('Email API configuration is missing')
 		}
 
-		let mailOptions: MailDataRequired
+		const { body, email, subject, html, data } = payload
 
-		if (templateName) {
-			mailOptions = {
-				to: email,
-				from: {
-					email: Config.SENDGRID.SRC_EMAIL,
-					name: 'Enverx',
-				},
-				templateId: templates[templateName!],
-				dynamicTemplateData: { data },
-			}
-		} else {
-			mailOptions = {
-				to: email,
-				from: {
-					email: Config.SENDGRID.SRC_EMAIL,
-					name: 'Enverx',
-				},
-				content: [
-					{
-						type: 'text',
-						value: body!,
-					},
-				],
-				subject,
-				html,
-			}
+		const mailOptions = {
+			from: Config.EMAIL.FROM,
+			to: email,
+			subject: subject || 'Notification',
+			text: body || data,
+			html: html || `<p>${data}</p>`,
 		}
 
 		const [response] = await sgMail.send(mailOptions)
-		Logger.info(response)
+		Logger.info('SendGrid accepted the email for delivery', {
+			statusCode: response?.statusCode,
+			recipient: email,
+			messageId: response?.headers?.['x-message-id'],
+		})
+		return {
+			success: true,
+			accepted: true,
+		}
 	} catch (error) {
-		Logger.error(error)
+		Logger.error('Email send failed', error)
 		return {
 			error,
 		}
 	}
 }
 
-export const sendMultipleEmails = async (emails: string[], templateId: string, data: any) => {
+export const sendMultipleEmails = async (emails: string[], subject: string, body: string) => {
 	try {
-		const mailOptions = {
-			to: emails,
-			from: {
-				email: Config.SENDGRID.SRC_EMAIL,
-				name: 'Enverx',
-			},
-			dynamicTemplateData: { data },
-			templateId,
+		if (!Config.EMAIL.PASS || !Config.EMAIL.FROM) {
+			throw new Error('Email API configuration is missing')
 		}
-		const [response] = await sgMail.sendMultiple(mailOptions)
 
-		Logger.info(response)
+		const response = await sgMail.send(
+			emails.map((email) => ({
+				from: Config.EMAIL.FROM,
+				to: email,
+				subject,
+				text: body,
+			}))
+		)
+
+		Logger.info('SendGrid accepted bulk email for delivery', {
+			count: response.length,
+			recipients: emails,
+		})
+		return {
+			success: true,
+			accepted: true,
+		}
 	} catch (error) {
-		Logger.error(error)
+		Logger.error('Bulk email send failed', error)
 		return {
 			error,
 		}

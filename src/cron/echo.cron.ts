@@ -1,32 +1,17 @@
 import cron from 'node-cron'
 import { Logger } from '@config/logger'
-// import { updateEchoSubscription } from '@user/service'
 
 const executeCrons = async () => {
-	cron.schedule('0 0 * * *', async () => {
+	cron.schedule('*/13 * * * *', async () => {
 		const thisDate = new Date()
-		Logger.info(`Cron Job is working to start Echo Subscription ${thisDate}`)
-		await updateEchoSubscription(
-			{
-				isEchoSubscribed: true,
-			},
-			{
-				echoStartDate: thisDate,
-			}
-		)
+		Logger.info(`Cron Job is running every 13 minutes (activation window) ${thisDate}`)
+		// TODO: add business logic to activate echo subscription for users
 	})
 
-	cron.schedule('59 23 * * *', async () => {
+	cron.schedule('6,19,32,45,58 * * * *', async () => {
 		const thisDate = new Date()
-		Logger.info(`Cron Job is working to end Echo Subscription ${thisDate}`)
-		await updateEchoSubscription(
-			{
-				isEchoSubscribed: false,
-			},
-			{
-				echoEndDate: thisDate,
-			}
-		)
+		Logger.info(`Cron Job is running every 13 minutes (deactivation window) ${thisDate}`)
+		// TODO: add business logic to deactivate echo subscription for users
 	})
 }
 

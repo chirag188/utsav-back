@@ -48,7 +48,8 @@ app.use('/', (req, res) => {
 // Express Error Handler
 app.use(expressErrorHandler)
 
-db.sync({ alter: true }).then(() => {
+db.sync().then(() => {
+// db.sync({ alter: true }).then(() => { for development only sync everytime
 	Logger.info('Database Connected')
 	const hostName = '0.0.0.0'
 	app.listen(parseInt(Config.PORT!), hostName, () => {
