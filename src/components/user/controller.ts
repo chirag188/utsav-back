@@ -727,20 +727,18 @@ export const getAttendanceListApi = async (req: Request, res: Response) => {
 export const getAttendanceReportAPI = async (req: Request, res: Response) => {
 	try {
 		const {
-			userType = 'yuvak',
-			samparkVrund = 'A',
+			userType = '',
+			samparkVrund = '',
 			active = 'true',
 			offset = '0',
-			limit = '10',
 			searchTxt = '',
-			orderBy = 'firstname',
+			orderBy = '',
 			orderType = 'DESC',
 			lastMonths = '',
 		} = req.query as Record<string, string>
 
 		const userList = await getAttendanceReport(
 			parseInt(offset),
-			parseInt(limit),
 			searchTxt,
 			orderBy,
 			orderType,

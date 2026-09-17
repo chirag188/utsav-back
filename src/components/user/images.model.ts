@@ -5,7 +5,7 @@ import { Table, Model, Column, DataType, AutoIncrement } from 'sequelize-typescr
 import { ImagesInterface } from '@interfaces/user'
 interface ImagesAttributes extends Optional<ImagesInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({ timestamps: false })
 class Images extends Model<ImagesInterface, ImagesAttributes> {
 	@AutoIncrement
 	@Column({ primaryKey: true })

@@ -6,7 +6,7 @@ import User from './user.model'
 import Karykarm from './karykarm.model'
 interface FollowUpAttributes extends Optional<FollowUpInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({ timestamps: false })
 class FollowUp extends Model<FollowUpInterface, FollowUpAttributes> {
 	@Column({ primaryKey: true })
 	id!: string

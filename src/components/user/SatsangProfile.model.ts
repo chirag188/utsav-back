@@ -7,7 +7,7 @@ import User from '@user/user.model'
 // import { afterCreateHooks } from './hooks'
 interface SatsangProfileAttributes extends Optional<satsangProfileInterface, 'userId'> {}
 
-@Table({ timestamps: true })
+@Table({ timestamps: false })
 class SatsangProfile extends Model<satsangProfileInterface, SatsangProfileAttributes> {
 	@ForeignKey(() => User)
 	@Column({ primaryKey: true })

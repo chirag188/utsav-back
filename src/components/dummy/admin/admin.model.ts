@@ -6,7 +6,7 @@ import { AdminInterface } from '@interfaces/_admin'
 
 interface UserAttributes extends Optional<AdminInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({ timestamps: false })
 class _admin extends Model<AdminInterface, UserAttributes> {
 	@Column({ primaryKey: true })
 	id!: string

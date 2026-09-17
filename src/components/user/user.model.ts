@@ -9,11 +9,14 @@ import {
 	AfterUpdate,
 	ForeignKey,
 	BelongsTo,
+	HasMany,
 } from 'sequelize-typescript'
 
 import { UserInterface } from '@interfaces/user'
 import { afterCreateHooks, afterUpdateHooks } from './hooks'
 import SocTable from './soc.model'
+
+type FollowUpType = import('./followUp.model').default
 
 interface UserAttributes extends Optional<UserInterface, 'id'> {}
 
@@ -142,6 +145,12 @@ class User extends Model<UserInterface, UserAttributes> {
 
 	@BelongsTo(() => SocTable)
 	society!: SocTable
+
+	@HasMany(() => require('./followUp.model').default, {
+		foreignKey: 'userId',
+		as: 'followUps',
+	})
+	followUps!: FollowUpType[]
 
 	// Hooks
 	@AfterCreate

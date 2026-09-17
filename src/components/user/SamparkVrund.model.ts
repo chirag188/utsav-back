@@ -5,7 +5,7 @@ import User from './user.model'
 import SocTable from './soc.model'
 interface samparkVrundAttributes extends Optional<SamparkVrundInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({ timestamps: false })
 class SamparkVrund extends Model<SamparkVrundInterface, samparkVrundAttributes> {
 	@Column({ primaryKey: true })
 	id?: string

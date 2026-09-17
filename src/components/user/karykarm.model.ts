@@ -4,7 +4,7 @@ import { Table, Model, Column, DataType, AutoIncrement, HasMany } from 'sequeliz
 import { KarykarmInterface } from '@interfaces/user'
 interface KarykarmAttributes extends Optional<KarykarmInterface, 'id'> {}
 
-@Table({ timestamps: true })
+@Table({ timestamps: false })
 class Karykarm extends Model<KarykarmInterface, KarykarmAttributes> {
 	@Column({ primaryKey: true })
 	id!: string

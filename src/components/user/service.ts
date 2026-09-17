@@ -165,30 +165,30 @@ export const upsertSatsangProfile = async (payload: satsangProfileInterface) => 
 
 export const upsertSamparkVrund = async (payload: any) => {
 	try {
-		// If karykar2profileId or karykar3profileId is not available, empty, or "", set it to null
-		if (!payload.karykar2profileId || payload.karykar2profileId === '') {
-			payload.karykar2profileId = null
-		}
-		if (!payload.karykar3profileId || payload.karykar3profileId === '') {
-			payload.karykar3profileId = null
-		}
+		// Normalize coordinator IDs: convert empty strings to null
+		const karykar2Id =
+			payload.karykar2profileId && payload.karykar2profileId !== ''
+				? payload.karykar2profileId
+				: null
+		const karykar3Id =
+			payload.karykar3profileId && payload.karykar3profileId !== ''
+				? payload.karykar3profileId
+				: null
 
-		// Find existing SamparkVrund based on mandal and karykar IDs
+		// Build Or conditions for matching existing vrunds with same coordinator
+		const orConditions = [
+			{ karykar1profileId: payload.karykar1profileId },
+			...(karykar2Id ? [{ karykar2profileId: karykar2Id }, { karykar1profileId: karykar2Id }] : []),
+			...(karykar3Id ? [{ karykar3profileId: karykar3Id }, { karykar1profileId: karykar3Id }] : []),
+		]
+
 		return await upsert(
 			SamparkVrund,
 			{
 				mandal: payload.mandal,
-				[Op.or]: [
-					{ karykar1profileId: payload.karykar1profileId },
-					payload.karykar2profileId && { karykar2profileId: payload.karykar2profileId },
-					payload.karykar3profileId && { karykar3profileId: payload.karykar3profileId },
-					payload.karykar2profileId && { karykar1profileId: payload.karykar2profileId },
-					payload.karykar3profileId && { karykar1profileId: payload.karykar3profileId },
-					{ karykar2profileId: payload.karykar1profileId },
-					{ karykar3profileId: payload.karykar1profileId },
-				].filter(Boolean), // remove false entries if karykar2profileId / karykar3profileId is undefined
+				[Op.or]: orConditions,
 			},
-			payload
+			{ ...payload, karykar2profileId: karykar2Id, karykar3profileId: karykar3Id }
 		)
 	} catch (error) {
 		Logger.error(error)
@@ -218,9 +218,12 @@ export const getSamparkVrund = async (id: string, mandal: string) => {
 
 export const deleteSamparkVrund = async (id: string, mandal: string) => {
 	try {
-		// Delete SamparkVrund if it exists
+		// Delete SamparkVrund if it exists for any coordinator position
 		const deletedCount = await SamparkVrund.destroy({
-			where: { karykar1profileId: id, mandal },
+			where: {
+				mandal,
+				[Op.or]: [{ karykar1profileId: id }, { karykar2profileId: id }, { karykar3profileId: id }],
+			},
 		})
 		// If nothing was deleted, return false
 		if (deletedCount === 0) return false
@@ -255,13 +258,17 @@ export const getUserService = async (filter: Partial<UserInterface>) => {
 
 		const samparkVrund = await SamparkVrund.findOne({
 			where: {
-				[Op.or]: [{ karykar1profileId: filter.id }, { karykar2profileId: filter.id }, { karykar3profileId: filter.id }],
+				[Op.or]: [
+					{ karykar1profileId: filter.id },
+					{ karykar2profileId: filter.id },
+					{ karykar3profileId: filter.id },
+				],
 			},
 		})
 		if (samparkVrund) {
-			return { ...user, samparkVrund: samparkVrund?.dataValues?.vrundName }
+			return Object.assign(user, { samparkVrund: samparkVrund?.dataValues?.vrundName })
 		}
-		return user || null
+		return user
 	} catch (err) {
 		Logger.error(err)
 		return null
@@ -465,6 +472,8 @@ export const getAllUser = async (
 
 		// Query
 		const userList = await User.findAndCountAll({
+			distinct: true,
+			subQuery: false,
 			offset,
 			...(limit !== 30 && { limit }),
 			where: userWhere,
@@ -495,7 +504,6 @@ export const getAllUser = async (
 
 export const getAttendanceReport = async (
 	offset: number,
-	limit: number,
 	searchTxt: string,
 	orderBy: string,
 	orderType: string,
@@ -505,54 +513,62 @@ export const getAttendanceReport = async (
 	lastMonths?: string | any
 ) => {
 	try {
-		// SamparkVrund filter
+		const parsedLastMonths = Number(lastMonths)
+		const hasLastMonths = Number.isFinite(parsedLastMonths) && parsedLastMonths > 0
+		const userOrderFields = new Set([
+			'firstname',
+			'lastname',
+			'middlename',
+			'mobileNumber',
+			'email',
+			'active',
+		])
+		const safeOrderBy = userOrderFields.has(orderBy) ? orderBy : 'firstname'
+		const safeOrderType = String(orderType).toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
 		const samparkVrundWhere =
 			samparkVrund && samparkVrund !== 'NA' ? { vrundName: samparkVrund } : undefined
 
-		// Last months filter -> convert to date
-		let karykarmDateFilter: any = undefined
-		if (lastMonths) {
-			const months = parseInt(lastMonths, 10)
-			if (!isNaN(months) && months > 0) {
-				const d = new Date()
-				d.setMonth(d.getMonth() - months)
-				karykarmDateFilter = { [Op.gte]: d }
-			}
-		}
-
-		const userList = await FollowUp.findAndCountAll({
+		return await FollowUp.findAndCountAll({
+			offset,
+			// limit,
+			order: [[{ model: User, as: 'userData' }, safeOrderBy, safeOrderType]],
 			include: [
 				{
 					model: User,
 					as: 'userData',
-					foreignKey: 'userId',
 					attributes: USER_PUBLIC_FIELDS,
-					required: true, // INNER JOIN to exclude FollowUps with missing users
+					required: true,
 					where: {
-						...(userType && { userType }),
+						...(userType !== '' && { userType }),
 						...(active !== undefined && { active }),
-						[Op.or]: [
-							{ firstname: { [Op.iLike]: `%${searchTxt}%` } },
-							{ lastname: { [Op.iLike]: `%${searchTxt}%` } },
-							{ email: { [Op.iLike]: `%${searchTxt}%` } },
-							Sequelize.where(Sequelize.cast(Sequelize.col('mobileNumber'), 'TEXT'), {
-								[Op.iLike]: `%${searchTxt}%`,
-							}),
-						],
+						...(samparkVrund !== '' && { activeGroup: false }),
+						...(searchTxt && {
+							[Op.or]: [
+								{ firstname: { [Op.iLike]: `%${searchTxt}%` } },
+								{ lastname: { [Op.iLike]: `%${searchTxt}%` } },
+								{ email: { [Op.iLike]: `%${searchTxt}%` } },
+								Sequelize.where(Sequelize.cast(Sequelize.col('mobileNumber'), 'TEXT'), {
+									[Op.iLike]: `%${searchTxt}%`,
+								}),
+							],
+						}),
 					},
 					include: [
 						{
 							model: SocTable,
-							as: 'society',
+							attributes: ['samparkVrundId'],
 							required: !!samparkVrundWhere,
-							attributes: ['id', 'socName', 'samparkVrundId'],
 							include: [
 								{
 									model: SamparkVrund,
-									as: 'samparkVrund',
-									required: !!samparkVrundWhere,
-									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId', 'karykar3profileId'],
 									where: samparkVrundWhere,
+									attributes: [
+										'id',
+										'vrundName',
+										'karykar1profileId',
+										'karykar2profileId',
+										'karykar3profileId',
+									],
 								},
 							],
 						},
@@ -561,17 +577,13 @@ export const getAttendanceReport = async (
 				{
 					model: Karykarm,
 					as: 'karykarmData',
-					foreignKey: 'karykarmId',
-					attributes: ['id', 'karykarmId', 'karykarmName', 'karykarmTime'],
-					required: !!karykarmDateFilter,
-					where: {
-						...(karykarmDateFilter && { karykarmTime: karykarmDateFilter }),
-					},
+					required: true,
+					where: hasLastMonths
+						? { karykarmTime: { [Op.gte]: moment().subtract(parsedLastMonths, 'months').toDate() } }
+						: undefined,
 				},
 			],
-			attributes: { exclude: ['createdAt', 'updatedAt', 'how', 'appattendance'] },
 		})
-		return userList
 	} catch (err) {
 		Logger.error(err)
 		return null
@@ -581,7 +593,7 @@ export const getAttendanceReport = async (
 export const getAllKarykarm = async (mandal: string | any) => {
 	try {
 		const karykarmList = await Karykarm.findAll({
-			order: [['createdAt', 'DESC']],
+			order: [['karykarmTime', 'DESC']],
 			where: {
 				...(mandal && { mandal }),
 			},
@@ -828,7 +840,13 @@ export const getFollowUpList = async (
 									where: {
 										...(samparkVrund && { vrundName: samparkVrund }),
 									},
-									attributes: ['id', 'vrundName', 'karykar1profileId', 'karykar2profileId', 'karykar3profileId'],
+									attributes: [
+										'id',
+										'vrundName',
+										'karykar1profileId',
+										'karykar2profileId',
+										'karykar3profileId',
+									],
 									include: [
 										{
 											model: User,
@@ -864,6 +882,8 @@ export const getFollowUpList = async (
 		}
 		const followUpList = await FollowUp.findAndCountAll({
 			...options,
+			distinct: true,
+			subQuery: false,
 		})
 		if (!followUpList) {
 			return null
@@ -892,7 +912,7 @@ export const getAttendanceList = async (userId: string, mandal?: string) => {
 					where: mandal ? { mandal } : undefined,
 				},
 			],
-			order: [['createdAt', 'DESC']],
+			order: [['karykarmId', 'DESC']],
 		})
 
 		return followUpList || null
@@ -987,12 +1007,6 @@ export const getProfileData = async (payload: { id: string }) => {
 						},
 					],
 				},
-				// Uncomment if you want SatsangProfile included
-				// {
-				//   model: SatsangProfile,
-				//   as: 'satsangData',
-				//   attributes: { exclude: ['createdAt', 'updatedAt'] },
-				// },
 			],
 		})
 
@@ -1363,36 +1377,38 @@ export const deleteSoc = async (id: string | any) => {
 
 export const getAllSocList = async (id?: string) => {
 	try {
-		const socRows = await SocTable.findAll({
-			attributes: [
-				'id',
-				'socName',
-				'area',
-				[fn('COUNT', col('users.id')), 'userCount'],
-				[literal('SUM(COUNT(users.id)) OVER ()'), 'totalUsers'],
-				[col('samparkVrund.vrundName'), 'vrundName'],
-			],
-			include: [
-				{
-					model: User,
-					attributes: [],
-					required: false,
-					where: { active: true, mandal: 'utsav' },
-				},
-				{
-					model: SamparkVrund,
-					as: 'samparkVrund',
-					attributes: [],
-					required: false,
-				},
-			],
-			...(id && { where: { id } }),
-			group: ['SocTable.id', 'samparkVrund.id'],
-			order: [['socName', 'ASC']],
-			raw: true,
-		})
-
-		const totalUsers = Number((socRows[0] as any)?.totalUsers ?? 0)
+		const [socRows, totalUsers] = await Promise.all([
+			SocTable.findAll({
+				attributes: [
+					'id',
+					'socName',
+					'area',
+					[fn('COUNT', col('users.id')), 'userCount'],
+					[col('samparkVrund.vrundName'), 'vrundName'],
+				],
+				include: [
+					{
+						model: User,
+						attributes: [],
+						required: false,
+						where: { active: true, mandal: 'utsav' },
+					},
+					{
+						model: SamparkVrund,
+						as: 'samparkVrund',
+						attributes: [],
+						required: false,
+					},
+				],
+				...(id && { where: { id } }),
+				group: ['SocTable.id', 'samparkVrund.id'],
+				order: [['socName', 'ASC']],
+				raw: true,
+			}),
+			User.count({
+				where: { active: true, mandal: 'utsav' },
+			}),
+		])
 
 		return {
 			count: socRows.length,
